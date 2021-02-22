@@ -57,6 +57,7 @@ class Dataset():
         self.image_list_inmemory = {}
         for sample in sample_list:
             self.image_list_inmemory[sample], _ = self.get_item(sample)
+            #log.info(self.image_list_inmemory[0])
         self.last_loaded = time.time()
 
     def unload_query_samples(self, sample_list):
@@ -68,8 +69,23 @@ class Dataset():
             self.image_list_inmemory = {}
 
     def get_samples(self, id_list):
-        data = np.array([self.image_list_inmemory[id] for id in id_list])
-        return data, self.label_list[id_list]
+        if self.name == "imagenet_tfserving":
+           return self.get_samplesPicture(id_list)
+        else:
+           data = np.array([self.image_list_inmemory[id] for id in id_list])
+           return data, self.label_list[id_list]
+
+    def get_samplesPicture(self, id_list):
+        log.info("PEINI: Call get_samplesPicture")
+        images = "["
+        for id in id_list:
+           #print(self.image_list_inmemory[id])
+           images = images + self.image_list_inmemory[id] + ","
+        images = images[:-1]
+        images = images + "]"
+        #images = images.replace("\n", " ")
+        #log.info(images)
+        return images, self.label_list[id_list]
 
     def get_item_loc(self, id):
         raise NotImplementedError("Dataset:get_item_loc")
@@ -89,6 +105,37 @@ class PostProcessCommon:
         n = len(results[0])
         for idx in range(0, n):
             result = results[0][idx] + self.offset
+            processed_results.append([result])
+            if result == expected[idx]:
+                self.good += 1
+        self.total += n
+        return processed_results
+
+    def add_results(self, results):
+        pass
+
+    def start(self):
+        self.good = 0
+        self.total = 0
+
+    def finalize(self, results, ds=False,  output_dir=None):
+        results["good"] = self.good
+        results["total"] = self.total
+
+#
+# Post processing restful tfserving
+#
+class PostProcessRestful:
+    def __init__(self, offset=0):
+        self.offset = offset
+        self.good = 0
+        self.total = 0
+
+    def __call__(self, results, ids, expected=None, result_dict=None):
+        processed_results = []
+        n = len(results)
+        for idx in range(0, n):
+            result = results[idx]['classes'] + self.offset
             processed_results.append([result])
             if result == expected[idx]:
                 self.good += 1
@@ -166,6 +213,28 @@ def resize_with_aspectratio(img, out_height, out_width, scale=87.5, inter_pol=cv
 
 
 def pre_process_vgg(img, dims=None, need_transpose=False):
+    log.info("pre_process_vgg")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    output_height, output_width, _ = dims
+    cv2_interpol = cv2.INTER_AREA
+    img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
+    img = center_crop(img, output_height, output_width)
+    img = np.asarray(img, dtype='float32')
+
+    # normalize image
+    means = np.array([123.68, 116.78, 103.94], dtype=np.float32)
+    img -= means
+
+    # transpose if needed
+    if need_transpose:
+        img = img.transpose([2, 0, 1])
+    return img
+
+def pre_process_tfserving(img, dims=None, need_transpose=False):
+    log.info("pre_process_tfserving:copy images")
+#TODO: maybe resize the picture? but still need to save the pictures as images
+# dont need to preprocess when using tf-serving
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     output_height, output_width, _ = dims

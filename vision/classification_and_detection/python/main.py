@@ -22,6 +22,7 @@ import numpy as np
 
 import dataset
 import imagenet
+import imagenetPicture
 import coco
 
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +37,10 @@ MILLI_SEC = 1000
 SUPPORTED_DATASETS = {
     "imagenet":
         (imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
+         {"image_size": [224, 224, 3]}),
+    "imagenet_tfserving":
+        (imagenetPicture.Imagenet, dataset.pre_process_tfserving, dataset.PostProcessRestful(offset=-1),
+        #(imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_mobilenet":
         (imagenet.Imagenet, dataset.pre_process_mobilenet, dataset.PostProcessArgMax(offset=-1),
@@ -83,6 +88,13 @@ SUPPORTED_PROFILES = {
         "dataset": "imagenet",
         "outputs": "ArgMax:0",
         "backend": "onnxruntime",
+        "model-name": "resnet50",
+    },
+    "resnet50-tfserving": {
+        "dataset": "imagenet_tfserving",
+        "backend": "tfserving",
+#        "server": "localhost:8500",
+        "server": "172.30.0.50:31930",
         "model-name": "resnet50",
     },
 
@@ -185,6 +197,8 @@ def get_args():
     parser.add_argument("--inputs", help="model inputs")
     parser.add_argument("--outputs", help="model outputs")
     parser.add_argument("--backend", help="runtime to use")
+    # server for tfserving service
+    parser.add_argument("--server", default="localhost:8500",help="serving service- host:port")
     parser.add_argument("--model-name", help="name of the mlperf model, ie. resnet50")
     parser.add_argument("--threads", default=os.cpu_count(), type=int, help="threads")
     parser.add_argument("--qps", type=int, help="target qps")
@@ -244,6 +258,9 @@ def get_backend(backend):
     elif backend == "tflite":
         from backend_tflite import BackendTflite
         backend = BackendTflite()
+    elif backend == "tfserving":
+        from backend_tfserving import BackendTfserving
+        backend = BackendTfserving()
     else:
         raise ValueError("unknown backend: " + backend)
     return backend
@@ -283,9 +300,21 @@ class RunnerBase:
     def run_one_item(self, qitem):
         # run the prediction
         processed_results = []
+        log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(None, qitem.label, qitem.content_id, qitem.query_id))
+        #log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(qitem.img, qitem.label, qitem.content_id, qitem.query_id))
         try:
-            results = self.model.predict({self.model.inputs[0]: qitem.img})
-            processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+            if self.model.name() == "tfserving":
+                log.info("Call tfserving predict")
+                results = self.model.predict(qitem.img)
+                log.info(results)
+                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+            else:
+                results = self.model.predict({self.model.inputs[0]: qitem.img})
+                print(results)
+                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+                print("processed_results")
+                print(processed_results)
+
             if self.take_accuracy:
                 self.post_process.add_results(processed_results)
                 self.result_timing.append(time.time() - qitem.start)
@@ -420,7 +449,19 @@ def main():
         count_override = True
 
     # dataset to use
+    #    "imagenet":
+    #    (imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
+    #     {"image_size": [224, 224, 3]}),
     wanted_dataset, pre_proc, post_proc, kwargs = SUPPORTED_DATASETS[args.dataset]
+    log.info("PEINI: Load DATASET: datapath={} imagelist={}, name={}, imageformat={}, pre_process={}, use_cache={}, count={}".format(
+          args.dataset_path,
+          args.dataset_list,
+          args.dataset,
+          image_format,
+          pre_proc,
+          args.cache,
+          count)
+    )
     ds = wanted_dataset(data_path=args.dataset_path,
                         image_list=args.dataset_list,
                         name=args.dataset,
@@ -428,8 +469,17 @@ def main():
                         pre_process=pre_proc,
                         use_cache=args.cache,
                         count=count, **kwargs)
+    log.info("ds count".format(ds.get_item_count))
+
+
     # load model to backend
-    model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
+    if args.backend == "tfserving":
+        log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
+        args.server,args.model,args.inputs,args.outputs))
+        model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
+    else:
+        model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
+
     final_results = {
         "runtime": model.name(),
         "version": model.version(),
@@ -457,12 +507,22 @@ def main():
     #
     count = ds.get_item_count()
 
-    # warmup
-    ds.load_query_samples([0])
-    for _ in range(5):
-        img, _ = ds.get_samples([0])
-        _ = backend.predict({backend.inputs[0]: img})
-    ds.unload_query_samples(None)
+    if args.backend == "tfserving":
+       ds.load_query_samples([0])
+       for _ in range(5):
+           img, _ = ds.get_samples([0])
+           #log.info("PEINI: get_sample{}".format(img))
+           _ = backend.predict(img)
+       ds.unload_query_samples(None)
+    else:
+       # warmup
+       ds.load_query_samples([0])
+       for _ in range(5):
+           img, _ = ds.get_samples([0])
+           _ = backend.predict({backend.inputs[0]: img})
+       ds.unload_query_samples(None)
+
+
 
     scenario = SCENARIO_MAP[args.scenario]
     runner_map = {

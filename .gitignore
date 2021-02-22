@@ -2,3 +2,6 @@ loadgen/build/
 libmlperf_loadgen.a
 __pycache__/
 generated/
+vision/classification_and_detection/data_imagenet/
+loadgen/mlperf_loadgen.egg-info/
+loadgen/mlperf_loadgen.cpython-38-x86_64-linux-gnu.so

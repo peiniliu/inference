@@ -9,7 +9,6 @@ from tensorflow.core.framework import graph_pb2
 
 import backend
 
-
 class BackendTensorflow(backend.Backend):
     def __init__(self):
         super(BackendTensorflow, self).__init__()

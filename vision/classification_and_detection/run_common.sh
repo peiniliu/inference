@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -lt 1 ]; then
-    echo "usage: $0 tf|onnxruntime|pytorch|tflite [resnet50|mobilenet|ssd-mobilenet|ssd-resnet34] [cpu|gpu]"
+    echo "usage: $0 tf|onnxruntime|pytorch|tflite|tfserving [resnet50|mobilenet|ssd-mobilenet|ssd-resnet34] [cpu|gpu]"
     exit 1
 fi
 if [ "x$DATA_DIR" == "x" ]; then
@@ -18,7 +18,7 @@ device="cpu"
 
 for i in $* ; do
     case $i in
-       tf|onnxruntime|tflite|pytorch) backend=$i; shift;;
+       tf|onnxruntime|tflite|pytorch|tfserving) backend=$i; shift;;
        cpu|gpu) device=$i; shift;;
        gpu) device=gpu; shift;;
        resnet50|mobilenet|ssd-mobilenet|ssd-resnet34|ssd-resnet34-tf) model=$i; shift;;
@@ -109,6 +109,16 @@ if [ $name == "mobilenet-tflite" ] ; then
     model_path="$MODEL_DIR/mobilenet_v1_1.0_224.tflite"
     profile=mobilenet-tf
     extra_args="$extra_args --backend tflite"
+fi
+
+#
+# tfserving 
+#
+if [ $name == "resnet50-tfserving" ] ; then
+    #model_path="$MODEL_DIR/resnet50_v1_mlflow"
+    model_path="$MODEL_DIR/resnet50_v1.pb"
+    profile=resnet50-tfserving
+    extra_args="$extra_args --backend tfserving"
 fi
 
 name="$backend-$device/$model"

@@ -33,6 +33,7 @@ class Imagenet(dataset.Dataset):
         self.label_list = []
         self.count = count
         self.use_cache = use_cache
+        self.name = name
         self.cache_dir = os.path.join(cache_dir, "preprocessed", name, image_format)
         self.data_path = data_path
         self.pre_process = pre_process
