@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resnet-deployment
+spec:
+  selector:
+    matchLabels:
+      app: resnet-server
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: resnet-server
+    spec:
+      containers:
+      - name: resnet-container
+        image: 172.30.0.49:5000/tensorflow-serving/resnet
+        ports:
+        - containerPort: 8500
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: resnet-service
+  name: resnet-service
+spec:
+  ports:
+  - port: 8500
+    targetPort: 8501
+    nodePort: 31930
+  selector:
+    app: resnet-server
+  type: NodePort

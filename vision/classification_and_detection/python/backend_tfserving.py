@@ -17,8 +17,8 @@ import grpc
 import requests
 import json 
 
-from tensorflow_serving.apis import predict_pb2
-from tensorflow_serving.apis import prediction_service_pb2_grpc
+#from tensorflow_serving.apis import predict_pb2
+#from tensorflow_serving.apis import prediction_service_pb2_grpc
 
 import base64
 import numpy as np 

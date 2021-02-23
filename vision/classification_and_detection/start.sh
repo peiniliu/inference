@@ -13,7 +13,7 @@ export DATA_DIR=/gpfs/bsc_home/xpliu/inference/vision/classification_and_detecti
 #./run_local.sh onnxruntime mobilenet cpu --scenario Offline
 #./run_local.sh tf resnet50 cpu --scenario Offline
 #./run_local.sh tf resnet50 cpu --scenario Server --count 2
-#./run_local.sh tfserving resnet50 cpu --scenario SingleStream --count 2 --server 172.30.0.50:31930
+./run_local.sh tfserving resnet50 cpu --scenario SingleStream --count 2 --server 172.30.0.50:31930
 #./run_local.sh tfserving resnet50 cpu --scenario MultiStream --count 2 --server 172.30.0.50:31930
 #./run_local.sh tfserving resnet50 cpu --scenario Server --count 2 --server 172.30.0.50:31930
-./run_local.sh tfserving resnet50 cpu --scenario Offline --count 2 --server 172.30.0.50:31930
+#./run_local.sh tfserving resnet50 cpu --scenario Offline --count 2 --server 172.30.0.50:31930
