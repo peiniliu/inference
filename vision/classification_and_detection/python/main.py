@@ -25,6 +25,8 @@ import imagenet
 import imagenetPicture
 import coco
 
+import mlflow
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("main")
 
@@ -430,11 +432,12 @@ def add_results(final_results, name, result_dict, result_list, took, show_accura
 
 
 def main():
-    global last_timeing
-    args = get_args()
+  global last_timeing
+  args = get_args()
 
-    log.info(args)
+  log.info(args)
 
+  with mlflow.start_run(run_name=args.backend) as mlrun:
     # find backend
     backend = get_backend(args.backend)
 
@@ -599,6 +602,8 @@ def main():
     if args.output:
         with open("results.json", "w") as f:
             json.dump(final_results, f, sort_keys=True, indent=4)
+
+    mlflow.log_artifacts("/root/vision/classification_and_detection/output", artifact_path="output")
 
 
 if __name__ == "__main__":

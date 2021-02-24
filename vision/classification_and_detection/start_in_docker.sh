@@ -1,6 +1,7 @@
 #setup loadgen
 cd /root/loadgen
 CFLAGS="-std=c++14" python setup.py develop
+pip install mlflow
 
 WORKDIR=/root/vision/classification_and_detection
 cd $WORKDIR
