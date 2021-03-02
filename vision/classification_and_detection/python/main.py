@@ -308,14 +308,14 @@ class RunnerBase:
             if self.model.name() == "tfserving":
                 log.info("Call tfserving predict")
                 results = self.model.predict(qitem.img)
-                log.info(results)
+                #log.info(results)
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
             else:
                 results = self.model.predict({self.model.inputs[0]: qitem.img})
-                print(results)
+                #print(results)
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
-                print("processed_results")
-                print(processed_results)
+                #print("processed_results")
+                #print(processed_results)
 
             if self.take_accuracy:
                 self.post_process.add_results(processed_results)

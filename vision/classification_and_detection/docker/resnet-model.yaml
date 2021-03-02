@@ -2,15 +2,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: resnet-deployment
+  namespace: resnet-tf
 spec:
   selector:
     matchLabels:
-      app: resnet-server
-  replicas: 3
+      app: resnet-tfserver
+  replicas: 1
   template:
     metadata:
       labels:
-        app: resnet-server
+        app: resnet-tfserver
     spec:
       containers:
       - name: resnet-container
@@ -24,11 +25,11 @@ metadata:
   labels:
     run: resnet-service
   name: resnet-service
+  namespace: resnet-tf
 spec:
   ports:
   - port: 8500
     targetPort: 8501
-    nodePort: 31930
   selector:
-    app: resnet-server
-  type: NodePort
+    app: resnet-tfserver
+  type: ClusterIP

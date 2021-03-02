@@ -89,10 +89,10 @@ class BackendTfserving(backend.Backend):
         #log.info("PEINI: response classes {}".format(response.json()))
         results = np.array([], dtype='int16')
         for i in response.json()['predictions']:
-            log.info("len {}".format(len(response.json()['predictions'])))
-            log.info("result {}".format(i['classes']))
+            #log.info("len {}".format(len(response.json()['predictions'])))
+            #log.info("result {}".format(i['classes']))
             results = np.append(results, i['classes'])
-            print(results) 
+            #print(results) 
         result = response.json()['predictions'][0]['classes']
         if result != 286:
             raise ValueError("BackendTfserving backend error")
