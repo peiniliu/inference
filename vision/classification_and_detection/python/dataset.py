@@ -153,6 +153,37 @@ class PostProcessRestful:
         results["good"] = self.good
         results["total"] = self.total
 
+#
+# Post processing seldon
+#
+class PostProcessSeldon:
+    def __init__(self, offset=0):
+        self.offset = offset
+        self.good = 0
+        self.total = 0
+
+    def __call__(self, results, ids, expected=None, result_dict=None):
+        processed_results = []
+        n = len(results)
+        for idx in range(0, n):
+            result = np.argmax(results[idx]) + self.offset
+            processed_results.append([result])
+            if result == expected[idx]:
+                self.good += 1
+        self.total += n
+        return processed_results
+
+    def add_results(self, results):
+        pass
+
+    def start(self):
+        self.good = 0
+        self.total = 0
+
+    def finalize(self, results, ds=False,  output_dir=None):
+        results["good"] = self.good
+        results["total"] = self.total
+
 
 class PostProcessArgMax:
     def __init__(self, offset=0):
@@ -214,6 +245,26 @@ def resize_with_aspectratio(img, out_height, out_width, scale=87.5, inter_pol=cv
 
 def pre_process_vgg(img, dims=None, need_transpose=False):
     log.info("pre_process_vgg")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    output_height, output_width, _ = dims
+    cv2_interpol = cv2.INTER_AREA
+    img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
+    img = center_crop(img, output_height, output_width)
+    img = np.asarray(img, dtype='float32')
+
+    # normalize image
+    means = np.array([123.68, 116.78, 103.94], dtype=np.float32)
+    img -= means
+
+    # transpose if needed
+    if need_transpose:
+        img = img.transpose([2, 0, 1])
+    return img
+
+
+def pre_process_no(img, dims=None, need_transpose=False):
+    log.info("pre_process_no for seldon")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     output_height, output_width, _ = dims

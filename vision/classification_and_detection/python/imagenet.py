@@ -86,6 +86,7 @@ class Imagenet(dataset.Dataset):
 
     def get_item(self, nr):
         """Get image by number in the list."""
+        # add path image_name
         dst = os.path.join(self.cache_dir, self.image_list[nr])
         img = np.load(dst + ".npy")
         return img, self.label_list[nr]

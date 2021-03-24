@@ -24,3 +24,4 @@ export DATA_DIR=$WORKDIR/data_imagenet
 #data imagenet
 #./run_local.sh tfserving resnet50 cpu --scenario SingleStream --count 2 --server resnet-service.resnet-tf:8500
 ./run_local.sh tfserving resnet50 cpu --scenario Offline --server resnet-service.resnet-tf:8500
+

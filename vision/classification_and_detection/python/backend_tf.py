@@ -41,4 +41,5 @@ class BackendTensorflow(backend.Backend):
         return self
 
     def predict(self, feed):
+        #print(feed)
         return self.sess.run(self.outputs, feed_dict=feed)

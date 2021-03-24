@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -lt 1 ]; then
-    echo "usage: $0 tf|onnxruntime|pytorch|tflite|tfserving [resnet50|mobilenet|ssd-mobilenet|ssd-resnet34] [cpu|gpu]"
+    echo "usage: $0 tf|onnxruntime|pytorch|tflite|tfserving|seldon [resnet50|mobilenet|ssd-mobilenet|ssd-resnet34] [cpu|gpu]"
     exit 1
 fi
 if [ "x$DATA_DIR" == "x" ]; then
@@ -16,9 +16,11 @@ backend=tf
 model=resnet50
 device="cpu"
 
+echo "$*"
+
 for i in $* ; do
     case $i in
-       tf|onnxruntime|tflite|pytorch|tfserving) backend=$i; shift;;
+       tf|onnxruntime|tflite|pytorch|tfserving|seldon) backend=$i; shift;;
        cpu|gpu) device=$i; shift;;
        gpu) device=gpu; shift;;
        resnet50|mobilenet|ssd-mobilenet|ssd-resnet34|ssd-resnet34-tf) model=$i; shift;;
@@ -121,5 +123,17 @@ if [ $name == "resnet50-tfserving" ] ; then
     extra_args="$extra_args --backend tfserving"
 fi
 
+#
+# seldon 
+#
+if [ $name == "resnet50-seldon" ] ; then
+    #model_path="$MODEL_DIR/resnet50_v1_mlflow"
+    model_path="$MODEL_DIR/resnet50_v1.pb"
+    profile=resnet50-seldon
+    extra_args="$extra_args --backend seldon"
+fi
+
+name="$backend-$device/$model"
 name="$backend-$device/$model"
 EXTRA_OPS="$extra_args $EXTRA_OPS"
+echo "$EXTRA_OPS"

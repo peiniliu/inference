@@ -1,0 +1,52 @@
+#dag
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: resnet-project-
+  namespace: resnet-tf-jobpipeline
+spec:
+  entrypoint: resnet-project
+  volumes:
+  - name: data-path
+    persistentVolumeClaim:
+      claimName: data-path
+  - name: resnettracker-pvc
+    persistentVolumeClaim:
+      claimName: resnettracker-pvc
+  templates:
+  - name: resnet-project
+    dag:
+      tasks:
+      - name: resnet-preprocessing
+        template: resnet-preprocessing
+      - name: resnet-predicting
+        template: resnet-predicting
+        dependencies: [resnet-preprocessing]
+
+ #template for preprocessing 
+  - name: resnet-preprocessing
+    container:
+      image: 172.30.0.49:5000/preprocessing-resnet
+      env:
+      - name: MLFLOW_TRACKING_URI
+        value: http://resnettf-tracker-service:8080
+      volumeMounts:
+      - name: data-path
+        mountPath: /root
+      - name: resnettracker-pvc
+        mountPath: /mlflow
+
+ #template for modeling 
+  - name: resnet-predicting
+    container:
+      image: 172.30.0.49:5000/predicting-resnet
+      env:
+      - name: MLFLOW_TRACKING_URI
+        value: http://resnettf-tracker-service:8080
+      volumeMounts:
+      - name: data-path
+        mountPath: /root
+      - name: resnettracker-pvc
+        mountPath: /mlflow
+
+

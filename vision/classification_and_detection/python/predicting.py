@@ -45,7 +45,7 @@ SUPPORTED_DATASETS = {
         #(imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_seldon":
-        (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
+        (imagenetPicture.Imagenet, dataset.pre_process_tfserving, dataset.PostProcessRestful(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_mobilenet":
         (imagenet.Imagenet, dataset.pre_process_mobilenet, dataset.PostProcessArgMax(offset=-1),
@@ -315,28 +315,17 @@ class RunnerBase:
     def run_one_item(self, qitem):
         # run the prediction
         processed_results = []
-        #log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(None, qitem.label, qitem.content_id, qitem.query_id))
-        #log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(qitem.img, None, None, None))
+        log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(None, qitem.label, qitem.content_id, qitem.query_id))
         #log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(qitem.img, qitem.label, qitem.content_id, qitem.query_id))
         try:
-            if self.model.name() == "tfserving":
-                log.info("Call tfserving predict")
+            if self.model.name() == "tfserving" or self.model.name() == "seldon":
+                log.info("Call tfserving/seldon predict")
                 results = self.model.predict(qitem.img)
                 #log.info(results)
-                #"predict list"
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
-            elif self.model.name() == "seldon":
-                log.info("Call seldon predict")
-                results = self.model.predict(qitem.img)
-                #log.info(results)
-                #"predict list"
-                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
-                log.info(processed_results)
-                #raise ValueError("stop here")
             else:
                 results = self.model.predict({self.model.inputs[0]: qitem.img})
                 #print(results)
-                #[array([ 74, 952, 250, 333,  38, 595, 803, 568, 312, 158, 375, 670, 668,493, 854, 123, 214, 186, 583, 424, 326, 952, 510, 123, 920, 393, 532, 794, 901, 349, 285, 157])]
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
                 #print("processed_results")
                 #print(processed_results)
@@ -534,14 +523,7 @@ def main():
     #
     count = ds.get_item_count()
 
-    if args.backend == "tfserving":
-       ds.load_query_samples([0])
-       for _ in range(5):
-           img, _ = ds.get_samples([0])
-           #log.info("PEINI: get_sample{}".format(img))
-           _ = backend.predict(img)
-       ds.unload_query_samples(None)
-    elif args.backend == "seldon":
+    if args.backend == "tfserving" or args.backend == "seldon":
        ds.load_query_samples([0])
        for _ in range(5):
            img, _ = ds.get_samples([0])
@@ -555,6 +537,7 @@ def main():
            img, _ = ds.get_samples([0])
            _ = backend.predict({backend.inputs[0]: img})
        ds.unload_query_samples(None)
+
 
 
     scenario = SCENARIO_MAP[args.scenario]
