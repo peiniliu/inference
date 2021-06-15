@@ -45,9 +45,9 @@ class BackendSeldon(backend.Backend):
         # By default tensorflow uses NHWC (and the cpu implementation only does NHWC)
         return "NHWC"
 
-    def load(self, inputs=None, outputs=None, server=None):
+    def load(self, namespace, deployment_name, inputs=None, outputs=None, server=None):
         # there is no input/output meta data i the graph so it need to come from config.
-        log.info("PEINI: server address {}".format(server))
+        log.info("PEINI: server address {}, namespace {}, deployment_name {}".format(server, namespace, deployment_name))
 #        if not inputs:
 #            raise ValueError("BackendTfserving needs inputs")
 #        if not outputs:
@@ -59,7 +59,7 @@ class BackendSeldon(backend.Backend):
         self.inputs = inputs
 
         #seldonclient
-        self.sc = SeldonClient(deployment_name="image",namespace="resnet-tf-graph", \
+        self.sc = SeldonClient(deployment_name=deployment_name, namespace=namespace, \
                   gateway="istio", \
                   gateway_endpoint=server, payload_type='tftensor', transport="grpc", \
                   client_return_type="proto", \

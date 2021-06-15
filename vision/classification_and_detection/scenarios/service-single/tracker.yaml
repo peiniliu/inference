@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: resnettracker-pv
-  namespace: resnet-tf
+  name: resnettracker-pv-single
+  namespace: resnet-tf-single
 spec:
   storageClassName: local-path
   capacity:
@@ -16,7 +16,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: resnettracker-pvc
-  namespace: resnet-tf
+  namespace: resnet-tf-single
 spec:
   storageClassName: local-path
   accessModes:
@@ -29,13 +29,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: resnettf-tracker-service
-  namespace: resnet-tf
+  namespace: resnet-tf-single
   labels:
     app: scanflow-tracker
 spec:
   type: NodePort
   ports:
-  - nodePort: 30010
+  - nodePort: 30016
     port: 8080
     targetPort: 5000
   selector:
@@ -45,7 +45,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tracker
-  namespace: resnet-tf
+  namespace: resnet-tf-single
 spec:
   replicas: 1
   selector:

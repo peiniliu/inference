@@ -1,11 +1,12 @@
 #setup loadgen
-cd /root/loadgen
-CFLAGS="-std=c++14" python setup.py develop
-pip install mlflow
+#cd /root/loadgen
+#CFLAGS="-std=c++14" python setup.py develop
+#pip install mlflow
 
 WORKDIR=/root/vision/classification_and_detection
 cd $WORKDIR
-export MODEL_DIR=$WORKDIR/models
+export MODEL_DIR=$WORKDIR/models/model
+#export MODEL_DIR=$WORKDIR/models/resnet/1538687457
 #export DATA_DIR=$WORKDIR/test_imagenet
 #export DATA_DIR=$WORKDIR/fake_imagenet
 export DATA_DIR=$WORKDIR/data_imagenet
@@ -18,4 +19,4 @@ export DATA_DIR=$WORKDIR/data_imagenet
 
 
 #batch
-./run_local.sh tf resnet50 cpu --scenario Offline 
+./run_local.sh tflocal resnet50 cpu --scenario Server --count 2 

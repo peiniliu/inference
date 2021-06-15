@@ -42,9 +42,11 @@ SUPPORTED_DATASETS = {
          {"image_size": [224, 224, 3]}),
     "imagenet_tfserving":
         (imagenetPicture.Imagenet, dataset.pre_process_tfserving, dataset.PostProcessRestful(offset=-1),
-        #(imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_seldon":
+        (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
+         {"image_size": [224, 224, 3]}),
+    "imagenet_tflocal":
         (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_mobilenet":
@@ -105,8 +107,16 @@ SUPPORTED_PROFILES = {
     "resnet50-seldon": {
         "dataset": "imagenet_seldon",
         "backend": "seldon",
-#        "server": "localhost:8500",
-        "server": "172.30.0.50:40000",
+        "server": "10.108.184.226:15101",
+        "namespace": "resnet-tf-single",
+        "deployment_name": "image",
+        "model-name": "resnet50",
+    },
+    "resnet50-tflocal": {
+        "inputs": "input_tensor:0",
+        "outputs": "predictions/Softmax:0",
+        "dataset": "imagenet_tflocal",
+        "backend": "tflocal",
         "model-name": "resnet50",
     },
 
@@ -211,6 +221,9 @@ def get_args():
     parser.add_argument("--backend", help="runtime to use")
     # server for tfserving service
     parser.add_argument("--server", default="localhost:8500",help="serving service- host:port")
+    # server for seldon deployment
+    parser.add_argument("--namespace", default="resnet-tf-single",help="seldon deployment model namespace")
+    parser.add_argument("--deployment_name", default="image",help="seldon deployment name")
     parser.add_argument("--model-name", help="name of the mlperf model, ie. resnet50")
     parser.add_argument("--threads", default=os.cpu_count(), type=int, help="threads")
     parser.add_argument("--qps", type=int, help="target qps")
@@ -276,6 +289,9 @@ def get_backend(backend):
     elif backend == "seldon":
         from backend_seldon import BackendSeldon
         backend = BackendSeldon()
+    elif backend == "tflocal":
+        from backend_tflocal import Backendtflocal
+        backend = Backendtflocal()
     else:
         raise ValueError("unknown backend: " + backend)
     return backend
@@ -325,8 +341,17 @@ class RunnerBase:
                 #log.info(results)
                 #"predict list"
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+                log.info(processed_results)
             elif self.model.name() == "seldon":
                 log.info("Call seldon predict")
+                results = self.model.predict(qitem.img)
+                #log.info(results)
+                #log.info(qitem.content_id)
+                #"predict list"
+                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+                log.info(processed_results)
+            elif self.model.name() == "tflocal":
+                log.info("Call tensorflow local batch inference")
                 results = self.model.predict(qitem.img)
                 #log.info(results)
                 #"predict list"
@@ -339,7 +364,7 @@ class RunnerBase:
                 #[array([ 74, 952, 250, 333,  38, 595, 803, 568, 312, 158, 375, 670, 668,493, 854, 123, 214, 186, 583, 424, 326, 952, 510, 123, 920, 393, 532, 794, 901, 349, 285, 157])]
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
                 #print("processed_results")
-                #print(processed_results)
+                print(processed_results)
 
             if self.take_accuracy:
                 self.post_process.add_results(processed_results)
@@ -500,10 +525,18 @@ def main():
 
 
     # load model to backend
-    if args.backend == "tfserving" or args.backend == "seldon":
+    if args.backend == "tfserving":
         log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
         args.server,args.model,args.inputs,args.outputs))
         model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
+    elif args.backend == "seldon":
+        log.info("PEINI:  Load seldon: server={} model={}, inputs={}, outputs={}".format(
+        args.server,args.model,args.inputs,args.outputs))
+        model = backend.load(namespace=args.namespace, deployment_name=args.deployment_name, inputs=args.inputs, outputs=args.outputs, server=args.server)
+    elif args.backend == "tflocal":
+        log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
+        args.server,args.model,args.inputs,args.outputs))
+        model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
     else:
         model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
 
@@ -534,18 +567,18 @@ def main():
     #
     count = ds.get_item_count()
 
-    if args.backend == "tfserving":
+    if args.backend == "tfserving" or args.backend == "seldon":
        ds.load_query_samples([0])
        for _ in range(5):
            img, _ = ds.get_samples([0])
            #log.info("PEINI: get_sample{}".format(img))
            _ = backend.predict(img)
        ds.unload_query_samples(None)
-    elif args.backend == "seldon":
+    elif args.backend == "tflocal":
        ds.load_query_samples([0])
        for _ in range(5):
            img, _ = ds.get_samples([0])
-           #log.info("PEINI: get_sample{}".format(img))
+           #log.info("PEINI: get_sample{}".format(img.shape))
            _ = backend.predict(img)
        ds.unload_query_samples(None)
     else:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -lt 1 ]; then
-    echo "usage: $0 tf|onnxruntime|pytorch|tflite|tfserving|seldon [resnet50|mobilenet|ssd-mobilenet|ssd-resnet34] [cpu|gpu]"
+    echo "usage: $0 tf|onnxruntime|pytorch|tflite|tfserving|seldon|tflocal [resnet50|mobilenet|ssd-mobilenet|ssd-resnet34] [cpu|gpu]"
     exit 1
 fi
 if [ "x$DATA_DIR" == "x" ]; then
@@ -20,7 +20,7 @@ echo "$*"
 
 for i in $* ; do
     case $i in
-       tf|onnxruntime|tflite|pytorch|tfserving|seldon) backend=$i; shift;;
+       tf|onnxruntime|tflite|pytorch|tfserving|seldon|tflocal) backend=$i; shift;;
        cpu|gpu) device=$i; shift;;
        gpu) device=gpu; shift;;
        resnet50|mobilenet|ssd-mobilenet|ssd-resnet34|ssd-resnet34-tf) model=$i; shift;;
@@ -117,8 +117,7 @@ fi
 # tfserving 
 #
 if [ $name == "resnet50-tfserving" ] ; then
-    #model_path="$MODEL_DIR/resnet50_v1_mlflow"
-    model_path="$MODEL_DIR/resnet50_v1.pb"
+    model_path="$MODEL_DIR"
     profile=resnet50-tfserving
     extra_args="$extra_args --backend tfserving"
 fi
@@ -127,10 +126,18 @@ fi
 # seldon 
 #
 if [ $name == "resnet50-seldon" ] ; then
-    #model_path="$MODEL_DIR/resnet50_v1_mlflow"
-    model_path="$MODEL_DIR/resnet50_v1.pb"
+    model_path="$MODEL_DIR"
     profile=resnet50-seldon
     extra_args="$extra_args --backend seldon"
+fi
+
+#
+# tflocal 
+#
+if [ $name == "resnet50-tflocal" ] ; then
+    model_path="$MODEL_DIR/1/"
+    profile=resnet50-tflocal
+    extra_args="$extra_args --backend tflocal"
 fi
 
 name="$backend-$device/$model"

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: interceptor-pod
-  namespace: resnet-tf
+  namespace: resnet-tf-single
   labels:
     app: interceptor-pod
 spec:
