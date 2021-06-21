@@ -25,8 +25,6 @@ import imagenet
 import imagenetPicture
 import coco
 
-import mlflow
-
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("main")
 
@@ -48,6 +46,9 @@ SUPPORTED_DATASETS = {
          {"image_size": [224, 224, 3]}),
     "imagenet_tflocal":
         (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
+         {"image_size": [224, 224, 3]}),
+    "imagenet_tflocal_preprocess":
+        (imagenet.Imagenet, dataset.pre_process_resnet, dataset.PostProcessSeldon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_mobilenet":
         (imagenet.Imagenet, dataset.pre_process_mobilenet, dataset.PostProcessArgMax(offset=-1),
@@ -191,6 +192,7 @@ SUPPORTED_PROFILES = {
         "data-format": "NHWC",
         "model-name": "ssd-resnet34",
     },
+
 }
 
 SCENARIO_MAP = {
@@ -228,6 +230,7 @@ def get_args():
     parser.add_argument("--threads", default=os.cpu_count(), type=int, help="threads")
     parser.add_argument("--qps", type=int, help="target qps")
     parser.add_argument("--cache", type=int, default=0, help="use cache")
+    parser.add_argument("--cache_dir", type=str, default=None, help="preprocessed cache dir")
     parser.add_argument("--accuracy", action="store_true", help="enable accuracy pass")
     parser.add_argument("--find-peak-performance", action="store_true", help="enable finding peak performance pass")
 
@@ -486,187 +489,185 @@ def main():
 
   log.info(args)
 
-  with mlflow.start_run(run_name=args.backend) as mlrun:
-    # find backend
-    backend = get_backend(args.backend)
+  # find backend
+  backend = get_backend(args.backend)
 
-    # override image format if given
-    image_format = args.data_format if args.data_format else backend.image_format()
+  # override image format if given
+  image_format = args.data_format if args.data_format else backend.image_format()
 
-    # --count applies to accuracy mode only and can be used to limit the number of images
-    # for testing. For perf model we always limit count to 200.
-    count_override = False
-    count = args.count
-    if count:
-        count_override = True
+  # --count applies to accuracy mode only and can be used to limit the number of images
+  # for testing. For perf model we always limit count to 200.
+  count_override = False
+  count = args.count
+  if count:
+      count_override = True
 
-    # dataset to use
-    #    "imagenet":
-    #    (imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
-    #     {"image_size": [224, 224, 3]}),
-    wanted_dataset, pre_proc, post_proc, kwargs = SUPPORTED_DATASETS[args.dataset]
-    log.info("PEINI: Load DATASET: datapath={} imagelist={}, name={}, imageformat={}, pre_process={}, use_cache={}, count={}".format(
-          args.dataset_path,
-          args.dataset_list,
-          args.dataset,
-          image_format,
-          pre_proc,
-          args.cache,
-          count)
-    )
-    ds = wanted_dataset(data_path=args.dataset_path,
-                        image_list=args.dataset_list,
-                        name=args.dataset,
-                        image_format=image_format,
-                        pre_process=pre_proc,
-                        use_cache=args.cache,
-                        count=count, **kwargs)
-    log.info("ds count".format(ds.get_item_count))
-
-
-    # load model to backend
-    if args.backend == "tfserving":
-        log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
-        args.server,args.model,args.inputs,args.outputs))
-        model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
-    elif args.backend == "seldon":
-        log.info("PEINI:  Load seldon: server={} model={}, inputs={}, outputs={}".format(
-        args.server,args.model,args.inputs,args.outputs))
-        model = backend.load(namespace=args.namespace, deployment_name=args.deployment_name, inputs=args.inputs, outputs=args.outputs, server=args.server)
-    elif args.backend == "tflocal":
-        log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
-        args.server,args.model,args.inputs,args.outputs))
-        model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
-    else:
-        model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
-
-    final_results = {
-        "runtime": model.name(),
-        "version": model.version(),
-        "time": int(time.time()),
-        "cmdline": str(args),
-    }
-
-    mlperf_conf = os.path.abspath(args.mlperf_conf)
-    if not os.path.exists(mlperf_conf):
-        log.error("{} not found".format(mlperf_conf))
-        sys.exit(1)
-
-    user_conf = os.path.abspath(args.user_conf)
-    if not os.path.exists(user_conf):
-        log.error("{} not found".format(user_conf))
-        sys.exit(1)
-
-    if args.output:
-        output_dir = os.path.abspath(args.output)
-        os.makedirs(output_dir, exist_ok=True)
-        os.chdir(output_dir)
-
-    #
-    # make one pass over the dataset to validate accuracy
-    #
-    count = ds.get_item_count()
-
-    if args.backend == "tfserving" or args.backend == "seldon":
-       ds.load_query_samples([0])
-       for _ in range(5):
-           img, _ = ds.get_samples([0])
-           #log.info("PEINI: get_sample{}".format(img))
-           _ = backend.predict(img)
-       ds.unload_query_samples(None)
-    elif args.backend == "tflocal":
-       ds.load_query_samples([0])
-       for _ in range(5):
-           img, _ = ds.get_samples([0])
-           #log.info("PEINI: get_sample{}".format(img.shape))
-           _ = backend.predict(img)
-       ds.unload_query_samples(None)
-    else:
-       # warmup
-       ds.load_query_samples([0])
-       for _ in range(5):
-           img, _ = ds.get_samples([0])
-           _ = backend.predict({backend.inputs[0]: img})
-       ds.unload_query_samples(None)
+  # dataset to use
+  #    "imagenet":
+  #    (imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
+  #     {"image_size": [224, 224, 3]}),
+  wanted_dataset, pre_proc, post_proc, kwargs = SUPPORTED_DATASETS[args.dataset]
+  log.info("PEINI: Load DATASET: datapath={} imagelist={}, name={}, imageformat={}, pre_process={}, use_cache={}, count={}".format(
+        args.dataset_path,
+        args.dataset_list,
+        args.dataset,
+        image_format,
+        pre_proc,
+        args.cache,
+        count)
+  )
+  ds = wanted_dataset(data_path=args.dataset_path,
+                      image_list=args.dataset_list,
+                      name=args.dataset,
+                      image_format=image_format,
+                      pre_process=pre_proc,
+                      use_cache=args.cache,
+                      count=count, cache_dir=args.cache_dir, **kwargs)
+  log.info("ds count".format(ds.get_item_count))
 
 
-    scenario = SCENARIO_MAP[args.scenario]
-    runner_map = {
-        lg.TestScenario.SingleStream: RunnerBase,
-        lg.TestScenario.MultiStream: QueueRunner,
-        lg.TestScenario.Server: QueueRunner,
-        lg.TestScenario.Offline: QueueRunner
-    }
-    runner = runner_map[scenario](model, ds, args.threads, post_proc=post_proc, max_batchsize=args.max_batchsize)
+  # load model to backend
+  if args.backend == "tfserving":
+      log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
+      args.server,args.model,args.inputs,args.outputs))
+      model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
+  elif args.backend == "seldon":
+      log.info("PEINI:  Load seldon: server={} model={}, inputs={}, outputs={}".format(
+      args.server,args.model,args.inputs,args.outputs))
+      model = backend.load(namespace=args.namespace, deployment_name=args.deployment_name, inputs=args.inputs, outputs=args.outputs, server=args.server)
+  elif args.backend == "tflocal":
+      log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
+      args.server,args.model,args.inputs,args.outputs))
+      model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
+  else:
+      model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
 
-    def issue_queries(query_samples):
-        runner.enqueue(query_samples)
+  final_results = {
+      "runtime": model.name(),
+      "version": model.version(),
+      "time": int(time.time()),
+      "cmdline": str(args),
+  }
 
-    def flush_queries():
-        pass
+  mlperf_conf = os.path.abspath(args.mlperf_conf)
+  if not os.path.exists(mlperf_conf):
+      log.error("{} not found".format(mlperf_conf))
+      sys.exit(1)
 
-    def process_latencies(latencies_ns):
-        # called by loadgen to show us the recorded latencies
-        global last_timeing
-        last_timeing = [t / NANO_SEC for t in latencies_ns]
+  user_conf = os.path.abspath(args.user_conf)
+  if not os.path.exists(user_conf):
+      log.error("{} not found".format(user_conf))
+      sys.exit(1)
 
-    settings = lg.TestSettings()
-    settings.FromConfig(mlperf_conf, args.model_name, args.scenario)
-    settings.FromConfig(user_conf, args.model_name, args.scenario)
-    settings.scenario = scenario
-    settings.mode = lg.TestMode.PerformanceOnly
-    if args.accuracy:
-        settings.mode = lg.TestMode.AccuracyOnly
-    if args.find_peak_performance:
-        settings.mode = lg.TestMode.FindPeakPerformance
+  if args.output:
+      output_dir = os.path.abspath(args.output)
+      os.makedirs(output_dir, exist_ok=True)
+      os.chdir(output_dir)
 
-    if args.time:
-        # override the time we want to run
-        settings.min_duration_ms = args.time * MILLI_SEC
-        settings.max_duration_ms = args.time * MILLI_SEC
+  #
+  # make one pass over the dataset to validate accuracy
+  #
+  count = ds.get_item_count()
 
-    if args.qps:
-        qps = float(args.qps)
-        settings.server_target_qps = qps
-        settings.offline_expected_qps = qps
+  if args.backend == "tfserving" or args.backend == "seldon":
+     ds.load_query_samples([0])
+     for _ in range(5):
+         img, _ = ds.get_samples([0])
+         #log.info("PEINI: get_sample{}".format(img))
+         _ = backend.predict(img)
+     ds.unload_query_samples(None)
+  elif args.backend == "tflocal":
+     ds.load_query_samples([0])
+     for _ in range(5):
+         img, _ = ds.get_samples([0])
+         #log.info("PEINI: get_sample{}".format(img.shape))
+         _ = backend.predict(img)
+     ds.unload_query_samples(None)
+  else:
+     # warmup
+     ds.load_query_samples([0])
+     for _ in range(5):
+         img, _ = ds.get_samples([0])
+         _ = backend.predict({backend.inputs[0]: img})
+     ds.unload_query_samples(None)
 
-    if count_override:
-        settings.min_query_count = count
-        settings.max_query_count = count
 
-    if args.samples_per_query:
-        settings.multi_stream_samples_per_query = args.samples_per_query
-    if args.max_latency:
-        settings.server_target_latency_ns = int(args.max_latency * NANO_SEC)
-        settings.multi_stream_target_latency_ns = int(args.max_latency * NANO_SEC)
+  scenario = SCENARIO_MAP[args.scenario]
+  runner_map = {
+      lg.TestScenario.SingleStream: RunnerBase,
+      lg.TestScenario.MultiStream: QueueRunner,
+      lg.TestScenario.Server: QueueRunner,
+      lg.TestScenario.Offline: QueueRunner
+  }
+  runner = runner_map[scenario](model, ds, args.threads, post_proc=post_proc, max_batchsize=args.max_batchsize)
 
-    sut = lg.ConstructSUT(issue_queries, flush_queries, process_latencies)
-    qsl = lg.ConstructQSL(count, min(count, 500), ds.load_query_samples, ds.unload_query_samples)
+  def issue_queries(query_samples):
+      runner.enqueue(query_samples)
 
-    log.info("starting {}".format(scenario))
-    result_dict = {"good": 0, "total": 0, "scenario": str(scenario)}
-    runner.start_run(result_dict, args.accuracy)
-    lg.StartTest(sut, qsl, settings)
+  def flush_queries():
+      pass
 
-    if not last_timeing:
-        last_timeing = runner.result_timing
-    if args.accuracy:
-        post_proc.finalize(result_dict, ds, output_dir=args.output)
-    add_results(final_results, "{}".format(scenario),
-                result_dict, last_timeing, time.time() - ds.last_loaded, args.accuracy)
+  def process_latencies(latencies_ns):
+      # called by loadgen to show us the recorded latencies
+      global last_timeing
+      last_timeing = [t / NANO_SEC for t in latencies_ns]
 
-    runner.finish()
-    lg.DestroyQSL(qsl)
-    lg.DestroySUT(sut)
+  settings = lg.TestSettings()
+  settings.FromConfig(mlperf_conf, args.model_name, args.scenario)
+  settings.FromConfig(user_conf, args.model_name, args.scenario)
+  settings.scenario = scenario
+  settings.mode = lg.TestMode.PerformanceOnly
+  if args.accuracy:
+      settings.mode = lg.TestMode.AccuracyOnly
+  if args.find_peak_performance:
+      settings.mode = lg.TestMode.FindPeakPerformance
 
-    #
-    # write final results
-    #
-    if args.output:
-        with open("results.json", "w") as f:
-            json.dump(final_results, f, sort_keys=True, indent=4)
+  if args.time:
+      # override the time we want to run
+      settings.min_duration_ms = args.time * MILLI_SEC
+      settings.max_duration_ms = args.time * MILLI_SEC
 
-    mlflow.log_artifacts("/root/vision/classification_and_detection/output", artifact_path="output")
+  if args.qps:
+      qps = float(args.qps)
+      settings.server_target_qps = qps
+      settings.offline_expected_qps = qps
+
+  if count_override:
+      settings.min_query_count = count
+      settings.max_query_count = count
+
+  if args.samples_per_query:
+      settings.multi_stream_samples_per_query = args.samples_per_query
+  if args.max_latency:
+      settings.server_target_latency_ns = int(args.max_latency * NANO_SEC)
+      settings.multi_stream_target_latency_ns = int(args.max_latency * NANO_SEC)
+
+  sut = lg.ConstructSUT(issue_queries, flush_queries, process_latencies)
+  qsl = lg.ConstructQSL(count, min(count, 500), ds.load_query_samples, ds.unload_query_samples)
+
+  log.info("starting {}".format(scenario))
+  result_dict = {"good": 0, "total": 0, "scenario": str(scenario)}
+  runner.start_run(result_dict, args.accuracy)
+  lg.StartTest(sut, qsl, settings)
+
+  if not last_timeing:
+      last_timeing = runner.result_timing
+  if args.accuracy:
+      post_proc.finalize(result_dict, ds, output_dir=args.output)
+  add_results(final_results, "{}".format(scenario),
+              result_dict, last_timeing, time.time() - ds.last_loaded, args.accuracy)
+
+  runner.finish()
+  lg.DestroyQSL(qsl)
+  lg.DestroySUT(sut)
+
+  #
+  # write final results
+  #
+  if args.output:
+      with open("results.json", "w") as f:
+          json.dump(final_results, f, sort_keys=True, indent=4)
+
 
 
 if __name__ == "__main__":

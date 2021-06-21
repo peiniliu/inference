@@ -10,7 +10,7 @@ import time
 
 import cv2
 import numpy as np
-
+import tensorflow as tf
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("dataset")
@@ -270,17 +270,33 @@ def pre_process_no(img, dims=None, need_transpose=False):
     output_height, output_width, _ = dims
     cv2_interpol = cv2.INTER_AREA
     img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
-    img = center_crop(img, output_height, output_width)
+    #img = center_crop(img, output_height, output_width)
     img = np.asarray(img, dtype='float32')
 
     # normalize image
-    means = np.array([123.68, 116.78, 103.94], dtype=np.float32)
-    img -= means
+    #means = np.array([123.68, 116.78, 103.94], dtype=np.float32)
+    #img -= means
 
     # transpose if needed
     if need_transpose:
         img = img.transpose([2, 0, 1])
     return img
+
+def pre_process_resnet(img, dims=None, need_transpose=False):
+    log.info("pre_process_resnet")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    output_height, output_width, _ = dims
+    cv2_interpol = cv2.INTER_AREA
+    img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
+    img = tf.keras.applications.resnet50.preprocess_input(img)
+    img = np.asarray(img, dtype='float32')
+
+    # transpose if needed
+    if need_transpose:
+        img = img.transpose([2, 0, 1])
+    return img
+
 
 def pre_process_tfserving(img, dims=None, need_transpose=False):
     log.info("pre_process_tfserving:copy images")

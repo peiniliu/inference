@@ -46,8 +46,8 @@ class Backendtflocal(backend.Backend):
 
     def predict(self, img):
         print(img.shape)
-        preprocessed_img = tf.keras.applications.inception_v3.preprocess_input(img)
-        #preprocessed_img = tf.keras.applications.mobilenet.preprocess_input(img)
-        #print(preprocessed_img)
-        preds = self.infer(tf.constant(preprocessed_img))[self.outputs[0]]
-        return preds 
+        preds = self.infer(tf.constant(img))[self.outputs[0]]
+
+        return preds
+
+ 
