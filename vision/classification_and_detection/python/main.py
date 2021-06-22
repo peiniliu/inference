@@ -220,6 +220,7 @@ def get_args():
     parser.add_argument("--output", help="test results")
     parser.add_argument("--inputs", help="model inputs")
     parser.add_argument("--outputs", help="model outputs")
+    parser.add_argument("--preprocess", type=int, default=0, help="preprocess step , 0 normal, 1 only preprocess, 2 predict with preprocess")
     parser.add_argument("--backend", help="runtime to use")
     # server for tfserving service
     parser.add_argument("--server", default="localhost:8500",help="serving service- host:port")
@@ -525,148 +526,148 @@ def main():
                       count=count, cache_dir=args.cache_dir, **kwargs)
   log.info("ds count".format(ds.get_item_count))
 
+  if args.preprocess != 1:
+      # load model to backend
+      if args.backend == "tfserving":
+          log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
+          args.server,args.model,args.inputs,args.outputs))
+          model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
+      elif args.backend == "seldon":
+          log.info("PEINI:  Load seldon: server={} model={}, inputs={}, outputs={}".format(
+          args.server,args.model,args.inputs,args.outputs))
+          model = backend.load(namespace=args.namespace, deployment_name=args.deployment_name, inputs=args.inputs, outputs=args.outputs, server=args.server)
+      elif args.backend == "tflocal":
+          log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
+          args.server,args.model,args.inputs,args.outputs))
+          model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs, preprocess=args.preprocess)
+      else:
+          model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
 
-  # load model to backend
-  if args.backend == "tfserving":
-      log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
-      args.server,args.model,args.inputs,args.outputs))
-      model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
-  elif args.backend == "seldon":
-      log.info("PEINI:  Load seldon: server={} model={}, inputs={}, outputs={}".format(
-      args.server,args.model,args.inputs,args.outputs))
-      model = backend.load(namespace=args.namespace, deployment_name=args.deployment_name, inputs=args.inputs, outputs=args.outputs, server=args.server)
-  elif args.backend == "tflocal":
-      log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
-      args.server,args.model,args.inputs,args.outputs))
-      model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
-  else:
-      model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
+      final_results = {
+          "runtime": model.name(),
+          "version": model.version(),
+          "time": int(time.time()),
+          "cmdline": str(args),
+      }
 
-  final_results = {
-      "runtime": model.name(),
-      "version": model.version(),
-      "time": int(time.time()),
-      "cmdline": str(args),
-  }
+      mlperf_conf = os.path.abspath(args.mlperf_conf)
+      if not os.path.exists(mlperf_conf):
+          log.error("{} not found".format(mlperf_conf))
+          sys.exit(1)
 
-  mlperf_conf = os.path.abspath(args.mlperf_conf)
-  if not os.path.exists(mlperf_conf):
-      log.error("{} not found".format(mlperf_conf))
-      sys.exit(1)
+      user_conf = os.path.abspath(args.user_conf)
+      if not os.path.exists(user_conf):
+          log.error("{} not found".format(user_conf))
+          sys.exit(1)
 
-  user_conf = os.path.abspath(args.user_conf)
-  if not os.path.exists(user_conf):
-      log.error("{} not found".format(user_conf))
-      sys.exit(1)
+      if args.output:
+          output_dir = os.path.abspath(args.output)
+          os.makedirs(output_dir, exist_ok=True)
+          os.chdir(output_dir)
 
-  if args.output:
-      output_dir = os.path.abspath(args.output)
-      os.makedirs(output_dir, exist_ok=True)
-      os.chdir(output_dir)
+      #
+      # make one pass over the dataset to validate accuracy
+      #
+      count = ds.get_item_count()
 
-  #
-  # make one pass over the dataset to validate accuracy
-  #
-  count = ds.get_item_count()
-
-  if args.backend == "tfserving" or args.backend == "seldon":
-     ds.load_query_samples([0])
-     for _ in range(5):
-         img, _ = ds.get_samples([0])
-         #log.info("PEINI: get_sample{}".format(img))
-         _ = backend.predict(img)
-     ds.unload_query_samples(None)
-  elif args.backend == "tflocal":
-     ds.load_query_samples([0])
-     for _ in range(5):
-         img, _ = ds.get_samples([0])
-         #log.info("PEINI: get_sample{}".format(img.shape))
-         _ = backend.predict(img)
-     ds.unload_query_samples(None)
-  else:
-     # warmup
-     ds.load_query_samples([0])
-     for _ in range(5):
-         img, _ = ds.get_samples([0])
-         _ = backend.predict({backend.inputs[0]: img})
-     ds.unload_query_samples(None)
+      if args.backend == "tfserving" or args.backend == "seldon":
+         ds.load_query_samples([0])
+         for _ in range(5):
+             img, _ = ds.get_samples([0])
+             #log.info("PEINI: get_sample{}".format(img))
+             _ = backend.predict(img)
+         ds.unload_query_samples(None)
+      elif args.backend == "tflocal":
+         ds.load_query_samples([0])
+         for _ in range(5):
+             img, _ = ds.get_samples([0])
+             #log.info("PEINI: get_sample{}".format(img.shape))
+             _ = backend.predict(img)
+         ds.unload_query_samples(None)
+      else:
+         # warmup
+         ds.load_query_samples([0])
+         for _ in range(5):
+             img, _ = ds.get_samples([0])
+             _ = backend.predict({backend.inputs[0]: img})
+         ds.unload_query_samples(None)
 
 
-  scenario = SCENARIO_MAP[args.scenario]
-  runner_map = {
-      lg.TestScenario.SingleStream: RunnerBase,
-      lg.TestScenario.MultiStream: QueueRunner,
-      lg.TestScenario.Server: QueueRunner,
-      lg.TestScenario.Offline: QueueRunner
-  }
-  runner = runner_map[scenario](model, ds, args.threads, post_proc=post_proc, max_batchsize=args.max_batchsize)
+      scenario = SCENARIO_MAP[args.scenario]
+      runner_map = {
+          lg.TestScenario.SingleStream: RunnerBase,
+          lg.TestScenario.MultiStream: QueueRunner,
+          lg.TestScenario.Server: QueueRunner,
+          lg.TestScenario.Offline: QueueRunner
+      }
+      runner = runner_map[scenario](model, ds, args.threads, post_proc=post_proc, max_batchsize=args.max_batchsize)
 
-  def issue_queries(query_samples):
-      runner.enqueue(query_samples)
+      def issue_queries(query_samples):
+          runner.enqueue(query_samples)
 
-  def flush_queries():
-      pass
+      def flush_queries():
+          pass
 
-  def process_latencies(latencies_ns):
-      # called by loadgen to show us the recorded latencies
-      global last_timeing
-      last_timeing = [t / NANO_SEC for t in latencies_ns]
+      def process_latencies(latencies_ns):
+          # called by loadgen to show us the recorded latencies
+          global last_timeing
+          last_timeing = [t / NANO_SEC for t in latencies_ns]
 
-  settings = lg.TestSettings()
-  settings.FromConfig(mlperf_conf, args.model_name, args.scenario)
-  settings.FromConfig(user_conf, args.model_name, args.scenario)
-  settings.scenario = scenario
-  settings.mode = lg.TestMode.PerformanceOnly
-  if args.accuracy:
-      settings.mode = lg.TestMode.AccuracyOnly
-  if args.find_peak_performance:
-      settings.mode = lg.TestMode.FindPeakPerformance
+      settings = lg.TestSettings()
+      settings.FromConfig(mlperf_conf, args.model_name, args.scenario)
+      settings.FromConfig(user_conf, args.model_name, args.scenario)
+      settings.scenario = scenario
+      settings.mode = lg.TestMode.PerformanceOnly
+      if args.accuracy:
+          settings.mode = lg.TestMode.AccuracyOnly
+      if args.find_peak_performance:
+          settings.mode = lg.TestMode.FindPeakPerformance
 
-  if args.time:
-      # override the time we want to run
-      settings.min_duration_ms = args.time * MILLI_SEC
-      settings.max_duration_ms = args.time * MILLI_SEC
+      if args.time:
+          # override the time we want to run
+          settings.min_duration_ms = args.time * MILLI_SEC
+          settings.max_duration_ms = args.time * MILLI_SEC
 
-  if args.qps:
-      qps = float(args.qps)
-      settings.server_target_qps = qps
-      settings.offline_expected_qps = qps
+      if args.qps:
+          qps = float(args.qps)
+          settings.server_target_qps = qps
+          settings.offline_expected_qps = qps
 
-  if count_override:
-      settings.min_query_count = count
-      settings.max_query_count = count
+      if count_override:
+          settings.min_query_count = count
+          settings.max_query_count = count
 
-  if args.samples_per_query:
-      settings.multi_stream_samples_per_query = args.samples_per_query
-  if args.max_latency:
-      settings.server_target_latency_ns = int(args.max_latency * NANO_SEC)
-      settings.multi_stream_target_latency_ns = int(args.max_latency * NANO_SEC)
+      if args.samples_per_query:
+          settings.multi_stream_samples_per_query = args.samples_per_query
+      if args.max_latency:
+          settings.server_target_latency_ns = int(args.max_latency * NANO_SEC)
+          settings.multi_stream_target_latency_ns = int(args.max_latency * NANO_SEC)
 
-  sut = lg.ConstructSUT(issue_queries, flush_queries, process_latencies)
-  qsl = lg.ConstructQSL(count, min(count, 500), ds.load_query_samples, ds.unload_query_samples)
+      sut = lg.ConstructSUT(issue_queries, flush_queries, process_latencies)
+      qsl = lg.ConstructQSL(count, min(count, 500), ds.load_query_samples, ds.unload_query_samples)
 
-  log.info("starting {}".format(scenario))
-  result_dict = {"good": 0, "total": 0, "scenario": str(scenario)}
-  runner.start_run(result_dict, args.accuracy)
-  lg.StartTest(sut, qsl, settings)
+      log.info("starting {}".format(scenario))
+      result_dict = {"good": 0, "total": 0, "scenario": str(scenario)}
+      runner.start_run(result_dict, args.accuracy)
+      lg.StartTest(sut, qsl, settings)
 
-  if not last_timeing:
-      last_timeing = runner.result_timing
-  if args.accuracy:
-      post_proc.finalize(result_dict, ds, output_dir=args.output)
-  add_results(final_results, "{}".format(scenario),
-              result_dict, last_timeing, time.time() - ds.last_loaded, args.accuracy)
+      if not last_timeing:
+          last_timeing = runner.result_timing
+      if args.accuracy:
+          post_proc.finalize(result_dict, ds, output_dir=args.output)
+      add_results(final_results, "{}".format(scenario),
+                  result_dict, last_timeing, time.time() - ds.last_loaded, args.accuracy)
 
-  runner.finish()
-  lg.DestroyQSL(qsl)
-  lg.DestroySUT(sut)
+      runner.finish()
+      lg.DestroyQSL(qsl)
+      lg.DestroySUT(sut)
 
-  #
-  # write final results
-  #
-  if args.output:
-      with open("results.json", "w") as f:
-          json.dump(final_results, f, sort_keys=True, indent=4)
+      #
+      # write final results
+      #
+      if args.output:
+          with open("results.json", "w") as f:
+              json.dump(final_results, f, sort_keys=True, indent=4)
 
 
 

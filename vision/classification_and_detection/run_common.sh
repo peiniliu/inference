@@ -135,12 +135,11 @@ fi
 # tflocal 
 #
 if [ $name == "resnet50-tflocal" ] ; then
-    model_path="$MODEL_DIR/1/"
+    model_path="$MODEL_DIR/0/"
     profile=resnet50-tflocal
     extra_args="$extra_args --backend tflocal"
 fi
 
-name="$backend-$device/$model"
 name="$backend-$device/$model"
 EXTRA_OPS="$extra_args $EXTRA_OPS"
 echo "$EXTRA_OPS"

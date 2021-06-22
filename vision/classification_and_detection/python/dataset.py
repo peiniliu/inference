@@ -270,12 +270,14 @@ def pre_process_no(img, dims=None, need_transpose=False):
     output_height, output_width, _ = dims
     cv2_interpol = cv2.INTER_AREA
     img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
-    #img = center_crop(img, output_height, output_width)
+    img = center_crop(img, output_height, output_width)
     img = np.asarray(img, dtype='float32')
+    #print(img.shape)
 
     # normalize image
     #means = np.array([123.68, 116.78, 103.94], dtype=np.float32)
     #img -= means
+    #print(img.shape)
 
     # transpose if needed
     if need_transpose:
