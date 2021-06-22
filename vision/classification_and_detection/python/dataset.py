@@ -291,6 +291,7 @@ def pre_process_resnet(img, dims=None, need_transpose=False):
     output_height, output_width, _ = dims
     cv2_interpol = cv2.INTER_AREA
     img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
+    img = center_crop(img, output_height, output_width)
     img = tf.keras.applications.resnet50.preprocess_input(img)
     img = np.asarray(img, dtype='float32')
 
