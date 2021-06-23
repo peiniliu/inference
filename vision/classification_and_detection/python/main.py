@@ -44,10 +44,10 @@ SUPPORTED_DATASETS = {
     "imagenet_seldon":
         (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
          {"image_size": [224, 224, 3]}),
-    "imagenet_tflocal":
-        (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
+    "imagenet_seldon_preprocessed":
+        (imagenet.Imagenet, dataset.pre_process_resnet, dataset.PostProcessSeldon(offset=-1),
          {"image_size": [224, 224, 3]}),
-    "imagenet_tflocal_preprocess":
+    "imagenet_tflocal":
         (imagenet.Imagenet, dataset.pre_process_resnet, dataset.PostProcessSeldon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_mobilenet":
@@ -216,7 +216,7 @@ def get_args():
     parser.add_argument("--scenario", default="SingleStream",
                         help="mlperf benchmark scenario, one of " + str(list(SCENARIO_MAP.keys())))
     parser.add_argument("--max-batchsize", type=int, help="max batch size in a single inference")
-    parser.add_argument("--model", required=True, help="model file")
+    parser.add_argument("--model", help="model file")
     parser.add_argument("--output", help="test results")
     parser.add_argument("--inputs", help="model inputs")
     parser.add_argument("--outputs", help="model outputs")
@@ -526,7 +526,7 @@ def main():
                       count=count, cache_dir=args.cache_dir, **kwargs)
   log.info("ds count".format(ds.get_item_count))
 
-  if args.preprocess != 1:
+  if args.preprocess == 0:
       # load model to backend
       if args.backend == "tfserving":
           log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
@@ -539,7 +539,7 @@ def main():
       elif args.backend == "tflocal":
           log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
           args.server,args.model,args.inputs,args.outputs))
-          model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs, preprocess=args.preprocess)
+          model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
       else:
           model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
 
