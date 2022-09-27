@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx1
+  #namespace: scanflow-ai-pa
+spec:
+  initContainers:
+    - name: istio-init
+      image: docker.io/istio/proxyv2:1.11.4
+      args:
+        - istio-iptables
+        - '-p'
+        - '15001'
+        - '-z'
+        - '15006'
+        - '-u'
+        - '1337'
+        - '-m'
+        - REDIRECT
+        - '-i'
+        - '*'
+        - '-x'
+        - ''
+        - '-b'
+        - '*'
+        - '-d'
+        - 15090,15021,15020
+      resources:
+        limits:
+          cpu: '1'
+          memory: 1Gi
+        requests:
+          cpu: '1'
+          memory: 1Gi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        capabilities:
+          add:
+            - NET_ADMIN
+            - NET_RAW
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    resources:
+      limits:
+        memory: "200Mi"
+        cpu: "2"
+      requests:
+        memory: "200Mi"
+        cpu: "2"
+    ports:
+    - containerPort: 80
+  - name: nginx2
+    image: nginx:1.14.2
+    resources:
+      limits:
+         cpu: 100m
+         memory: 128Mi
+      requests:
+         cpu: 100m
+         memory: 128Mi
+     # limits:
+     #   memory: "200Mi"
+     #   cpu: "1.5"
+     # requests:
+     #   memory: "200Mi"
+     #   cpu: "1.5"
+    ports:
+    - containerPort: 8080
+

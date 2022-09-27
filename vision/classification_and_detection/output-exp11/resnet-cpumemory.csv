@@ -1,0 +1,7 @@
+benchmark,k8senv,sbatch,numctn,cscenario,cbatch,reps,qps,mean,p50,p80,p90,p95,p99,p999
+resnet,cpumemory,128,1,offline,10,10,,,,,,,,
+resnet,cpumemory,128,2,offline,10,10,,,,,,,,
+resnet,cpumemory,128,4,offline,10,10,,,,,,,,
+resnet,cpumemory,128,8,offline,10,10,,,,,,,,
+resnet,cpumemory,128,16,offline,10,10,,,,,,,,
+resnet,cpumemory,128,32,offline,10,10,,,,,,,,

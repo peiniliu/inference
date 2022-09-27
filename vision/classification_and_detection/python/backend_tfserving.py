@@ -77,6 +77,7 @@ class BackendTfserving(backend.Backend):
 
         #restful - service port 8501- change yaml
         self.SERVER_URL = "http://"+server+"/v1/models/resnet:predict"
+        #self.SERVER_URL = "http://"+server+"/seldon/scanflow-ai-pa/tfserving-mobilnet/v1/models/resnet:predict"
         log.info("PEINI url {}".format(self.SERVER_URL))
         jpeg_bytes = base64.b64encode(data).decode('utf-8')
         #images = '[{"b64": "%s"}]' % jpeg_bytes

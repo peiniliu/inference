@@ -76,7 +76,7 @@ class Dataset():
            return data, self.label_list[id_list]
 
     def get_samplesPicture(self, id_list):
-        log.info("PEINI: Call get_samplesPicture")
+        #log.info("PEINI: Call get_samplesPicture")
         images = "["
         for id in id_list:
            #print(self.image_list_inmemory[id])

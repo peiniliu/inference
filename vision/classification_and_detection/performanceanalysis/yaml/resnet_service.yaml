@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: resnet-service
+  name: resnet-service
+spec:
+  ports:
+  - port: 8501
+    targetPort: 8501
+    nodePort: 31930
+    name: rest
+  - port: 8500
+    targetPort: 8500
+    nodePort: 31931
+    name: grpc
+  selector:
+    app: resnet-server
+  type: NodePort

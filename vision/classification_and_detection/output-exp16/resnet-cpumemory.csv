@@ -1,0 +1,6 @@
+benchmark,k8senv,sbatch,numctn,cscenario,cbatch,reps,qps,mean,p50,p80,p90,p95,p99,p999
+resnet,cpumemory,16,1,offline,10,10, 99.43122053920717, 124.5487024779567, 124.623667493, 198.350302146, 223.151196942, 235.694967583, 245.364183783, 247.111888147
+resnet,cpumemory,16,2,offline,10,10,,,,,,,,
+resnet,cpumemory,16,4,offline,10,10,,,,,,,,
+resnet,cpumemory,16,8,offline,10,10,,,,,,,,
+resnet,cpumemory,16,16,offline,10,10,,,,,,,,

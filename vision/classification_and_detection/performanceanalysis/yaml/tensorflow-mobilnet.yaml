@@ -1,0 +1,51 @@
+apiVersion: machinelearning.seldon.io/v1
+kind: SeldonDeployment
+metadata:
+  name: tfserving-mobilnet
+  namespace: scanflow-ai-pa
+spec:
+  protocol: tensorflow
+  predictors:
+  - componentSpecs:
+    - spec:
+        containers:
+        - args:
+          - --port=8500
+          - --rest_api_port=8501
+          image: tensorflow/serving
+          name: model
+          ports:
+          - containerPort: 8501
+            name: http
+            protocol: TCP
+          - containerPort: 8500
+            name: grpc
+            protocol: TCP
+          resources:
+            limits:
+              cpu: '8'
+              memory: 2Gi
+            requests:
+              cpu: '8'
+              memory: 2Gi
+    graph:
+      name: model
+      type: MODEL
+      envSecretRefName: scanflow-secret
+      modelUri: s3://mlperf/mobilenet/tf/model
+      implementation: TENSORFLOW_SERVER
+      parameters:
+      - name: model_name
+        type: STRING
+        value: resnet
+      - name: model_input
+        type: STRING
+        value: input_7
+      - name: model_output
+        type: STRING
+        value: predictions
+      endpoint:
+        httpPort: 8501
+        grpcPort: 8500
+    name: online-inference
+    replicas: 1

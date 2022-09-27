@@ -1,0 +1,43 @@
+apiVersion: machinelearning.seldon.io/v1
+kind: SeldonDeployment
+metadata:
+  name: online-inference
+  namespace: pa
+spec:
+  name: online-inference
+  predictors:
+#    - componentSpecs:
+#        - kedaSpec:
+#            cooldownPeriod: 10
+#            maxReplicaCount: 10
+#            minReplicaCount: 3
+#            pollingInterval: 10
+#            triggers:
+#              - metadata:
+#                  metricName: cpu
+#                  query: >-
+#                    sum(rate(container_cpu_usage_seconds_total{container="predictor-online"}[1m]))+sum(rate(container_cpu_usage_seconds_total{container="tfserving"}[1m]))+sum(rate(container_cpu_usage_seconds_total{container="seldon-container-engine"}[1m]))
+#                  serverAddress: http://prometheus.istio-system:9090
+#                  threshold: '8'
+#                type: prometheus
+    - graph:
+        endpoint:
+          type: GRPC
+        envSecretRefName: scanflow-secret
+        implementation: TENSORFLOW_SERVER
+        modelUri: >-
+          s3://scanflow/scanflow-mlperf-dataengineer/1/fde8c5e912a84b8385e1154053c3e759/artifacts/mlperf-resnet/model
+        name: predictor-online
+        parameters:
+          - name: model_name
+            type: STRING
+            value: predictor-online
+          - name: model_input
+            type: STRING
+            value: input_image
+          - name: model_output
+            type: STRING
+            value: predictions/Softmax:0
+      name: online-inference-single
+      replicas: 3
+      traffic: 100

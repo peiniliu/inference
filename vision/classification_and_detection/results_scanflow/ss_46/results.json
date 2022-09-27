@@ -1,0 +1,22 @@
+{
+    "TestScenario.Server": {
+        "count": 1000,
+        "good_items": 0,
+        "mean": 9.36963989837,
+        "percentiles": {
+            "50.0": 6.993106702,
+            "80.0": 13.615482495999998,
+            "90.0": 20.322683143400003,
+            "95.0": 29.70768075229998,
+            "99.0": 45.533211804029996,
+            "99.9": 64.20192557410009
+        },
+        "qps": 0.9876123835413576,
+        "took": 1012.542994260788,
+        "total_items": 1000
+    },
+    "cmdline": "Namespace(accuracy=False, backend='seldon', cache=0, cache_dir=None, count=1000, data_format=None, dataset='imagenet_seldon_preprocessed', dataset_list=None, dataset_path='data_imagenet', deployment_name='online-inference-single', find_peak_performance=False, inputs=None, max_batchsize=32, max_latency=60.0, mlperf_conf='../../mlperf.conf', model=None, model_name='resnet50', namespace='scanflow-mlperf-dataengineer', output='ss_46', outputs=None, preprocess=0, profile=None, qps=None, samples_per_query=None, scenario='Server', server='172.30.0.50:40000', threads=72, time=None, user_conf='user.conf')",
+    "runtime": "seldon",
+    "time": 1638570381,
+    "version": "2.4.1/v2.4.0-49-g85c8b2a817f"
+}

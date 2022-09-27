@@ -1,0 +1,7 @@
+benchmark,k8senv,sbatch,numctn,cscenario,cbatch,reps,qps
+resnet,cpumemory,0,1,offline,10,10, 140.22505536942333
+resnet,cpumemory,0,2,offline,10,10, 143.68372098508152
+resnet,cpumemory,0,4,offline,10,10, 144.41103263635173
+resnet,cpumemory,0,8,offline,10,10, 145.14804726908037
+resnet,cpumemory,0,16,offline,10,10, 144.82730125231694
+resnet,cpumemory,0,32,offline,10,10, 144.9151361671958

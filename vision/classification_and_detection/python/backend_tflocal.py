@@ -29,7 +29,7 @@ class Backendtflocal(backend.Backend):
         # By default tensorflow uses NHWC (and the cpu implementation only does NHWC)
         return "NHWC"
 
-    def load(self, model_dir, inputs=None, outputs=None):
+    def load(self, model_dir, inputs=None, outputs=None, preprocess=0):
         # there is no input/output meta data i the graph so it need to come from config.
         log.info("PEINI: model_dir {}".format(model_dir))
         #if not inputs:
@@ -38,6 +38,7 @@ class Backendtflocal(backend.Backend):
         #    raise ValueError("BackendTensorflow needs outputs")
         self.outputs = outputs
         self.inputs = inputs
+        self.preprocess = preprocess
 
         self.model = tf.saved_model.load(model_dir, tags=None, options=None)
         log.info("PEINI: signature list {}".format(list(self.model.signatures.keys())))
@@ -47,6 +48,8 @@ class Backendtflocal(backend.Backend):
 
     def predict(self, img):
         print(img.shape)
+        if self.preprocess == 0:
+            img = preprocess_input(img)
         preds = self.infer(tf.constant(img))[self.outputs[0]]
 
         return preds

@@ -1,0 +1,37 @@
+benchmark,k8senv,sbatch,numctn,cscenario,cbatch,reps,qps
+resnet,cpumemory,0,1,offline,2,10,
+resnet,cpumemory,0,1,offline,4,10,
+resnet,cpumemory,0,1,offline,8,10,
+resnet,cpumemory,0,1,offline,10,10, 117.87787540925908
+resnet,cpumemory,0,1,offline,16,10,
+resnet,cpumemory,0,1,offline,32,10,
+resnet,cpumemory,0,2,offline,2,10,
+resnet,cpumemory,0,2,offline,4,10,
+resnet,cpumemory,0,2,offline,8,10,
+resnet,cpumemory,0,2,offline,10,10, 159.30887793408604
+resnet,cpumemory,0,2,offline,16,10,
+resnet,cpumemory,0,2,offline,32,10,
+resnet,cpumemory,0,4,offline,2,10,
+resnet,cpumemory,0,4,offline,4,10,
+resnet,cpumemory,0,4,offline,8,10,
+resnet,cpumemory,0,4,offline,10,10, 160.46756766975705
+resnet,cpumemory,0,4,offline,16,10,
+resnet,cpumemory,0,4,offline,32,10,
+resnet,cpumemory,0,8,offline,2,10,
+resnet,cpumemory,0,8,offline,4,10,
+resnet,cpumemory,0,8,offline,8,10,
+resnet,cpumemory,0,8,offline,10,10, 159.09198429645824
+resnet,cpumemory,0,8,offline,16,10,
+resnet,cpumemory,0,8,offline,32,10,
+resnet,cpumemory,0,16,offline,2,10,
+resnet,cpumemory,0,16,offline,4,10,
+resnet,cpumemory,0,16,offline,8,10,
+resnet,cpumemory,0,16,offline,10,10, 156.9936168221312
+resnet,cpumemory,0,16,offline,16,10,
+resnet,cpumemory,0,16,offline,32,10,
+resnet,cpumemory,0,32,offline,2,10,
+resnet,cpumemory,0,32,offline,4,10,
+resnet,cpumemory,0,32,offline,8,10,
+resnet,cpumemory,0,32,offline,10,10, 145.2253909509832
+resnet,cpumemory,0,32,offline,16,10,
+resnet,cpumemory,0,32,offline,32,10,

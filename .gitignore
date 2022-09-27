@@ -1,3 +1,5 @@
+vision/classification_and_detection/performanceanalysis/dataset/
+vision/classification_and_detection/performanceanalysis/model/
 loadgen/build/
 libmlperf_loadgen.a
 __pycache__/

@@ -340,7 +340,7 @@ class RunnerBase:
         #log.info("PEINI: run prediction qitem: img={}, label={}, content_id={}, query_id={}".format(qitem.img, qitem.label, qitem.content_id, qitem.query_id))
         try:
             if self.model.name() == "tfserving":
-                log.info("Call tfserving predict")
+                #log.info("Call tfserving predict")
                 results = self.model.predict(qitem.img)
                 #log.info(results)
                 #"predict list"
@@ -526,7 +526,7 @@ def main():
                       count=count, cache_dir=args.cache_dir, **kwargs)
   log.info("ds count".format(ds.get_item_count))
 
-  if args.preprocess == 0:
+  if args.preprocess != 1:
       # load model to backend
       if args.backend == "tfserving":
           log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
@@ -537,9 +537,9 @@ def main():
           args.server,args.model,args.inputs,args.outputs))
           model = backend.load(namespace=args.namespace, deployment_name=args.deployment_name, inputs=args.inputs, outputs=args.outputs, server=args.server)
       elif args.backend == "tflocal":
-          log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}".format(
-          args.server,args.model,args.inputs,args.outputs))
-          model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
+          log.info("PEINI:  Load tf as batch: server={} model={}, inputs={}, outputs={}, preprocess={}".format(
+          args.server,args.model,args.inputs,args.outputs, args.preprocess))
+          model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs, preprocess=args.preprocess)
       else:
           model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
 
@@ -571,12 +571,13 @@ def main():
       count = ds.get_item_count()
 
       if args.backend == "tfserving" or args.backend == "seldon":
-         ds.load_query_samples([0])
-         for _ in range(5):
-             img, _ = ds.get_samples([0])
-             #log.info("PEINI: get_sample{}".format(img))
-             _ = backend.predict(img)
-         ds.unload_query_samples(None)
+  #       ds.load_query_samples([0])
+  #       for _ in range(5):
+  #           img, _ = ds.get_samples([0])
+  #           #log.info("PEINI: get_sample{}".format(img))
+  #           _ = backend.predict(img)
+  #       ds.unload_query_samples(None)
+         log.info("PEINI: args.backend".format(args.backend))
       elif args.backend == "tflocal":
          ds.load_query_samples([0])
          for _ in range(5):
