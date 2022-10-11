@@ -7,10 +7,13 @@ dataset related classes and methods
 import logging
 import sys
 import time
+import json
 
 import cv2
 import numpy as np
 import tensorflow as tf
+# from keras.preprocessing.image import img_to_array
+# from keras.applications import imagenet_utils
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("dataset")
@@ -54,10 +57,12 @@ class Dataset():
         raise NotImplementedError("Dataset:get_list")
 
     def load_query_samples(self, sample_list):
+        # log.info(len(sample_list))
         self.image_list_inmemory = {}
         for sample in sample_list:
             self.image_list_inmemory[sample], _ = self.get_item(sample)
-            #log.info(self.image_list_inmemory[0])
+            # log.info(sample)
+            # print(type(self.image_list_inmemory[0]))
         self.last_loaded = time.time()
 
     def unload_query_samples(self, sample_list):
@@ -69,22 +74,35 @@ class Dataset():
             self.image_list_inmemory = {}
 
     def get_samples(self, id_list):
-        if self.name == "imagenet_tfserving":
-           return self.get_samplesPicture(id_list)
-        else:
-           data = np.array([self.image_list_inmemory[id] for id in id_list])
-           return data, self.label_list[id_list]
+         if self.name == "imagenet_tfserving":
+            return self.get_samplesPicture(id_list)
+         elif  self.name == "imagenet_tfserving_v2":
+            return self.get_samplesPicture_v2(id_list)
+         else:
+            data = np.array([self.image_list_inmemory[id] for id in id_list])
+            return data, self.label_list[id_list]
+        # log.info(id_list)
+        #data = [self.image_list_inmemory[id] for id in id_list]
+        #return json.dumps({'instances': data}), self.label_list[id_list]
 
     def get_samplesPicture(self, id_list):
         #log.info("PEINI: Call get_samplesPicture")
         images = "["
         for id in id_list:
-           #print(self.image_list_inmemory[id])
+        #    print(self.image_list_inmemory[id])
            images = images + self.image_list_inmemory[id] + ","
         images = images[:-1]
         images = images + "]"
         #images = images.replace("\n", " ")
         #log.info(images)
+        return images, self.label_list[id_list]
+    
+    def get_samplesPicture_v2(self, id_list):
+        #log.info("PEINI: Call get_samplesPicture")
+        images = []
+        for id in id_list:
+        #    print(self.image_list_inmemory[id])
+           images.append(self.image_list_inmemory[id])
         return images, self.label_list[id_list]
 
     def get_item_loc(self, id):
@@ -300,11 +318,29 @@ def pre_process_resnet(img, dims=None, need_transpose=False):
         img = img.transpose([2, 0, 1])
     return img
 
-
 def pre_process_tfserving(img, dims=None, need_transpose=False):
     log.info("pre_process_tfserving:copy images")
 #TODO: maybe resize the picture? but still need to save the pictures as images
 # dont need to preprocess when using tf-serving
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    output_height, output_width, _ = dims
+    cv2_interpol = cv2.INTER_AREA
+    img = resize_with_aspectratio(img, output_height, output_width, inter_pol=cv2_interpol)
+    img = center_crop(img, output_height, output_width)
+    img = np.asarray(img, dtype='float32')
+
+    # normalize image
+    means = np.array([123.68, 116.78, 103.94], dtype=np.float32)
+    img -= means
+
+    # transpose if needed
+    if need_transpose:
+        img = img.transpose([2, 0, 1])
+    return img
+
+def pre_process_tfserving_v2(img, dims=None, need_transpose=False):
+    log.info("pre_process_tfserving_v2")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     output_height, output_width, _ = dims

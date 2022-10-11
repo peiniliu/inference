@@ -21,7 +21,7 @@ REP=$7
 
 echo "parameter run_test: $1 $2 $3 $4 $5 $6 $7"
 
-OUTPUT_DIR="output-exp18"
+OUTPUT_DIR="output-exp22"
 
 #for k in `seq $REP` 
 for k in $REP 
@@ -35,7 +35,7 @@ do
          for c_batch in $LIST_CLIENT_BATCH
          do
               echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
-              /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 36 --max-batchsize $c_batch
+              /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 72
               #mkdir $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k
               #for c in `seq 1`
               #do
@@ -52,12 +52,13 @@ do
          done
          ;;
        "S")
-              #/gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --namespace scanflow-ai-pa --deployment_name resnet-deployment --backend tfserving --output outputtestserver --threads 36
-              #sleep 300
-         echo "S not ready"
+         for c_batch in $LIST_CLIENT_BATCH
+         do
+            echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
+            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k 
+         done
          ;;
        "SS")
-#/gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_seldon_preprocessed --dataset-path data_imagenet --scenario SingleStream --model-name resnet50 --server 172.30.0.50:40000 --namespace scanflow-mlperf-dataengineer --deployment_name online-inference-single --backend seldon --output output
          echo "SS not ready"
          ;;
        "MS")

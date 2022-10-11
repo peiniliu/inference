@@ -1,0 +1,9 @@
+locustfile = locust/locustfile-rest.py
+headless = true
+users = 500
+spawn-rate = 10
+run-time = 5m
+host = http://172.30.0.50:31930
+expect-workers = 10
+html = output-exp20/cpumem-resnet-32-32-O-32-10/output.html
+csv = output-exp20/cpumem-resnet-32-32-O-32-10/output

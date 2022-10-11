@@ -83,10 +83,11 @@ class BackendTfserving(backend.Backend):
         #images = '[{"b64": "%s"}]' % jpeg_bytes
         images = '[{"b64": "%s"},{"b64": "%s"}]' % (jpeg_bytes,jpeg_bytes)
         predict_request = '{"instances" : %s}' % images
+        # headers = {"content-type": "application/json"}
         response = requests.post(self.SERVER_URL, data=predict_request)
         #predict_request = '{"instances" : [{"b64": "%s"}]}' % jpeg_bytes
         #predict_request = '{"instances" : [{"b64": "%s"},{"b64": "%s"}]}' % (jpeg_bytes,jpeg_bytes)
-        #log.info("request {}".format(predict_request))
+        log.info("request {}".format(predict_request))
         #log.info("PEINI: response classes {}".format(response.json()))
         results = np.array([], dtype='int16')
         for i in response.json()['predictions']:

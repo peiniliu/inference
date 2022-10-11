@@ -23,6 +23,7 @@ import numpy as np
 import dataset
 import imagenet
 import imagenetPicture
+import imagenetPicture_v2
 import coco
 
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +41,9 @@ SUPPORTED_DATASETS = {
          {"image_size": [224, 224, 3]}),
     "imagenet_tfserving":
         (imagenetPicture.Imagenet, dataset.pre_process_tfserving, dataset.PostProcessRestful(offset=-1),
+         {"image_size": [224, 224, 3]}),
+    "imagenet_tfserving_v2":
+        (imagenetPicture_v2.Imagenet, dataset.pre_process_tfserving_v2, dataset.PostProcessSeldon(offset=-1),
          {"image_size": [224, 224, 3]}),
     "imagenet_seldon":
         (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessSeldon(offset=-1),
@@ -101,6 +105,13 @@ SUPPORTED_PROFILES = {
     "resnet50-tfserving": {
         "dataset": "imagenet_tfserving",
         "backend": "tfserving",
+#        "server": "localhost:8500",
+        "server": "172.30.0.50:31930",
+        "model-name": "resnet50",
+    },
+    "resnet50-tfserving_v2": {
+        "dataset": "imagenet_tfserving_v2",
+        "backend": "tfserving_v2",
 #        "server": "localhost:8500",
         "server": "172.30.0.50:31930",
         "model-name": "resnet50",
@@ -290,6 +301,9 @@ def get_backend(backend):
     elif backend == "tfserving":
         from backend_tfserving import BackendTfserving
         backend = BackendTfserving()
+    elif backend == "tfserving_v2":
+        from backend_tfserving_v2 import BackendTfservingV2
+        backend = BackendTfservingV2()
     elif backend == "seldon":
         from backend_seldon import BackendSeldon
         backend = BackendSeldon()
@@ -344,6 +358,12 @@ class RunnerBase:
                 results = self.model.predict(qitem.img)
                 #log.info(results)
                 #"predict list"
+                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+                log.info(processed_results)
+            elif self.model.name() == "tfserving_v2":
+                # log.info("Call tfserving predict v2")
+                results = self.model.predict(qitem.img)
+                # log.info(results)
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
                 log.info(processed_results)
             elif self.model.name() == "seldon":
@@ -416,6 +436,9 @@ class QueueRunner(RunnerBase):
             worker.daemon = True
             self.workers.append(worker)
             worker.start()
+            #log.info("PEINI: SEE WORKER"+str(len(self.workers)))
+            
+        #raise ValueError("check backend error")
 
     def handle_tasks(self, tasks_queue):
         """Worker thread."""
@@ -532,6 +555,10 @@ def main():
           log.info("PEINI:  Load TFX: server={} model={}, inputs={}, outputs={}".format(
           args.server,args.model,args.inputs,args.outputs))
           model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
+      elif args.backend == "tfserving_v2":
+          log.info("PEINI:  Load TFX_v2: server={} model={}, inputs={}, outputs={}".format(
+          args.server,args.model,args.inputs,args.outputs))
+          model = backend.load(inputs=args.inputs, outputs=args.outputs, server=args.server)
       elif args.backend == "seldon":
           log.info("PEINI:  Load seldon: server={} model={}, inputs={}, outputs={}".format(
           args.server,args.model,args.inputs,args.outputs))
@@ -570,7 +597,7 @@ def main():
       #
       count = ds.get_item_count()
 
-      if args.backend == "tfserving" or args.backend == "seldon":
+      if args.backend == "tfserving" or args.backend == "tfserving_v2" or args.backend == "seldon":
   #       ds.load_query_samples([0])
   #       for _ in range(5):
   #           img, _ = ds.get_samples([0])

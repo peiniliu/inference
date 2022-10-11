@@ -41,7 +41,7 @@ function create_tfserving_service () {
   cpus=$(( $num_cpu / $2 ))
   memory=$(( $num_memory / $2 ))Gi
   num_inter=$3
-  num_intra=2
+  num_intra=32
   inter=$(( $num_inter / $2 ))
   #inter=$2
   intra=$(( $num_intra / $2 ))
@@ -66,8 +66,10 @@ spec:
     spec:
       containers:
       - name: resnet-container
-        image: 172.30.0.49:5000/tfserving
-        args: ["--rest_api_num_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter"]
+        #image: 172.30.0.49:5000/tfserving
+        image: 172.30.0.49:5000/resnet_serving:2.8.2
+        #args: ["--rest_api_num_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter"]
+        args: ["--grpc_max_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter"]
         env:
         - name: MODEL_NAME
           value: "$1"

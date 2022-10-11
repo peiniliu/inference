@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences
+POST,/v1/models/resnet:predict,HTTPError('504 Server Error: Gateway Time-out for url: http://172.30.0.50:31930/v1/models/resnet:predict'),68

@@ -39,7 +39,7 @@ spec:
         image: 172.30.0.49:5000/tfserving
         #args: ["--rest_api_num_threads=32","--tensorflow_session_parallelism=32"]
         #args: ["--rest_api_num_threads=16","--tensorflow_session_parallelism=16","--tensorflow_intra_op_parallelism=0","--tensorflow_inter_op_parallelism=0"]
-        args: ["--rest_api_num_threads=128","--tensorflow_session_parallelism=0","--tensorflow_intra_op_parallelism=32","--tensorflow_inter_op_parallelism=1"]
+        args: ["--rest_api_num_threads=128","--tensorflow_session_parallelism=0","--tensorflow_intra_op_parallelism=32","--tensorflow_inter_op_parallelism=32"]
         env:
         - name: MODEL_NAME
           value: "resnet"
