@@ -1,22 +1,22 @@
 {
     "TestScenario.Server": {
-        "count": 270336,
+        "count": 12005,
         "good_items": 0,
-        "mean": 272.0118229935699,
+        "mean": 12.088688706295377,
         "percentiles": {
-            "50.0": 278.78820935550004,
-            "80.0": 443.211297276,
-            "90.0": 503.065442707,
-            "95.0": 528.30052603975,
-            "99.0": 547.7811920189,
-            "99.9": 549.07316592168
+            "50.0": 12.139469712,
+            "80.0": 18.112398509200002,
+            "90.0": 20.207222958600003,
+            "95.0": 21.703539871599997,
+            "99.0": 24.086298946679978,
+            "99.9": 27.363607417556
         },
-        "qps": 83.139370425541,
-        "took": 3251.6002781391144,
-        "total_items": 270336
+        "qps": 140.23288203113825,
+        "took": 85.60759663581848,
+        "total_items": 12005
     },
-    "cmdline": "Namespace(accuracy=False, backend='tfserving', cache=0, cache_dir=None, count=None, data_format=None, dataset='imagenet_tfserving', dataset_list=None, dataset_path='data_imagenet', deployment_name='image', find_peak_performance=True, inputs=None, max_batchsize=32, max_latency=None, mlperf_conf='../../mlperf.conf', model=None, model_name='resnet50', namespace='resnet-tf-single', output='output-exp22/none-resnet-16-32-S-1-10', outputs=None, preprocess=0, profile=None, qps=None, samples_per_query=None, scenario='Server', server='172.30.0.50:31930', threads=36, time=None, user_conf='user.conf')",
+    "cmdline": "Namespace(accuracy=False, backend='tfserving', cache=0, cache_dir=None, count=None, data_format=None, dataset='imagenet_tfserving', dataset_list=None, dataset_path='data_imagenet', deployment_name='image', find_peak_performance=False, inputs=None, max_batchsize=32, max_latency=None, mlperf_conf='../../mlperf.conf', model=None, model_name='resnet50', namespace='resnet-tf-single', output='output-exp22/none-resnet-16-32-S-1-10', outputs=None, preprocess=0, profile=None, qps=200, samples_per_query=None, scenario='Server', server='172.30.0.50:31930', threads=256, time=None, user_conf='user.conf')",
     "runtime": "tfserving",
-    "time": 1665433241,
+    "time": 1665609092,
     "version": "2.9.2/v2.9.1-132-g18960c44ad3"
 }

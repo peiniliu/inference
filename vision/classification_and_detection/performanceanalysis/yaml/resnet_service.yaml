@@ -17,3 +17,4 @@ spec:
   selector:
     app: resnet-server
   type: NodePort
+  #type: ClusterIP

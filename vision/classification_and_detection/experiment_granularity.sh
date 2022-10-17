@@ -45,8 +45,9 @@ function create_tfserving_service () {
   inter=$(( $num_inter / $2 ))
   #inter=$2
   intra=$(( $num_intra / $2 ))
+  restapi=$(( $inter * 2 ))
 
-  echo "num_ctn: $2 cpu: $cpus memory: $memory inter: $inter intra: $intra"
+  echo "num_ctn: $2 cpu: $cpus memory: $memory inter: $inter intra: $intra restapi: $restapi"
 
   cat <<EOF | sudo /usr/local/bin/kubectl apply -f -
 apiVersion: apps/v1
@@ -68,8 +69,8 @@ spec:
       - name: resnet-container
         #image: 172.30.0.49:5000/tfserving
         image: 172.30.0.49:5000/resnet_serving:2.8.2
-        #args: ["--rest_api_num_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter"]
-        args: ["--grpc_max_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter"]
+        #args: ["--rest_api_num_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_timeout_in_ms=200000"]
+        args: ["--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_num_threads=$restapi","--rest_api_timeout_in_ms=100000"]
         env:
         - name: MODEL_NAME
           value: "$1"
@@ -126,7 +127,7 @@ function change_affinity () {
 
 for K8S_ENV in $LIST_ENVS
 do 
-    #change_k8s_env $K8S_ENV
+    change_k8s_env $K8S_ENV
     for bench in $LIST_BENCHMARKS
     do
         #server setting

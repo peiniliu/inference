@@ -83,6 +83,9 @@ class BackendTfserving(backend.Backend):
         #images = '[{"b64": "%s"}]' % jpeg_bytes
         images = '[{"b64": "%s"},{"b64": "%s"}]' % (jpeg_bytes,jpeg_bytes)
         predict_request = '{"instances" : %s}' % images
+        # with open('data.json', 'w') as f:
+        #     json.dump(predict_request, f)
+        # raise ValueError("BackendTfserving backend error")
         # headers = {"content-type": "application/json"}
         response = requests.post(self.SERVER_URL, data=predict_request)
         #predict_request = '{"instances" : [{"b64": "%s"}]}' % jpeg_bytes

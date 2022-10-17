@@ -21,10 +21,11 @@ REP=$7
 
 echo "parameter run_test: $1 $2 $3 $4 $5 $6 $7"
 
-OUTPUT_DIR="output-exp22"
+#OUTPUT_DIR="output-exp24"
+OUTPUT_DIR="exp1"
 
-#for k in `seq $REP` 
-for k in $REP 
+for k in `seq $REP` 
+#for k in $REP 
 do
   for scen in $LIST_CLIENT_SCENARIOS
   do
@@ -35,7 +36,8 @@ do
          for c_batch in $LIST_CLIENT_BATCH
          do
               echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
-              /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 72
+              /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 128 --qps 200 --max-batchsize $c_batch
+              sleep 30
               #mkdir $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k
               #for c in `seq 1`
               #do
@@ -55,14 +57,25 @@ do
          for c_batch in $LIST_CLIENT_BATCH
          do
             echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
-            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k 
+            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 200
+            sleep 30
          done
          ;;
        "SS")
-         echo "SS not ready"
+         for c_batch in $LIST_CLIENT_BATCH
+         do
+            echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
+            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario SingleStream --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k
+            sleep 30
+         done
          ;;
        "MS")
-         echo "MS not ready"
+         for c_batch in $LIST_CLIENT_BATCH
+         do
+            echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
+            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario MultiStream --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 200 --max-latency 80
+            sleep 30
+         done
          ;;
        esac
   done

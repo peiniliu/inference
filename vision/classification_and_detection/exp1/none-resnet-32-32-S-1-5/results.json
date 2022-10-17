@@ -1,0 +1,22 @@
+{
+    "TestScenario.Server": {
+        "count": 12005,
+        "good_items": 0,
+        "mean": 6.191246344846397,
+        "percentiles": {
+            "50.0": 6.226250498,
+            "80.0": 9.0721694004,
+            "90.0": 10.1741689316,
+            "95.0": 10.659532431599999,
+            "99.0": 11.4468711672,
+            "99.9": 11.89379760594004
+        },
+        "qps": 166.7907794479904,
+        "took": 71.97640085220337,
+        "total_items": 12005
+    },
+    "cmdline": "Namespace(accuracy=False, backend='tfserving', cache=0, cache_dir=None, count=None, data_format=None, dataset='imagenet_tfserving', dataset_list=None, dataset_path='data_imagenet', deployment_name='image', find_peak_performance=False, inputs=None, max_batchsize=32, max_latency=None, mlperf_conf='../../mlperf.conf', model=None, model_name='resnet50', namespace='resnet-tf-single', output='exp1/none-resnet-32-32-S-1-5', outputs=None, preprocess=0, profile=None, qps=200, samples_per_query=None, scenario='Server', server='172.30.0.50:31930', threads=256, time=None, user_conf='user.conf')",
+    "runtime": "tfserving",
+    "time": 1665958751,
+    "version": "2.9.2/v2.9.1-132-g18960c44ad3"
+}
