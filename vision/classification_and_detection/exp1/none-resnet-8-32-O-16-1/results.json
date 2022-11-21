@@ -2,21 +2,21 @@
     "TestScenario.Offline": {
         "count": 32768,
         "good_items": 0,
-        "mean": 94.0215837893042,
+        "mean": 92.76421592104589,
         "percentiles": {
-            "50.0": 93.94640914850001,
-            "80.0": 148.080029634,
-            "90.0": 166.177470984,
-            "95.0": 175.531115789,
-            "99.0": 182.330207615,
-            "99.9": 184.282870703
+            "50.0": 92.8683241635,
+            "80.0": 147.137096428,
+            "90.0": 165.52848246,
+            "95.0": 174.59153037,
+            "99.0": 181.714416167,
+            "99.9": 182.798848121
         },
-        "qps": 177.419167164826,
-        "took": 184.69255900382996,
+        "qps": 178.948151645063,
+        "took": 183.11449265480042,
         "total_items": 32768
     },
-    "cmdline": "Namespace(accuracy=False, backend='tfserving', cache=0, cache_dir=None, count=None, data_format=None, dataset='imagenet_tfserving', dataset_list=None, dataset_path='data_imagenet', deployment_name='image', find_peak_performance=False, inputs=None, max_batchsize=16, max_latency=None, mlperf_conf='../../mlperf.conf', model=None, model_name='resnet50', namespace='resnet-tf-single', output='exp1/none-resnet-8-32-O-16-1', outputs=None, preprocess=0, profile=None, qps=200, samples_per_query=None, scenario='Offline', server='172.30.0.50:31930', threads=128, time=60, user_conf='user.conf')",
+    "cmdline": "Namespace(accuracy=False, backend='tfserving', cache=0, cache_dir=None, count=None, data_format=None, dataset='imagenet_tfserving', dataset_list=None, dataset_path='data_imagenet', deployment_name='image', find_peak_performance=False, inputs=None, max_batchsize=16, max_latency=None, mlperf_conf='../../mlperf.conf', model=None, model_name='resnet50', namespace='resnet-tf-single', output='exp1/none-resnet-8-32-O-16-1', outputs=None, preprocess=0, profile=None, qps=200, samples_per_query=None, scenario='Offline', server='172.30.0.50:31930', threads=128, time=None, user_conf='user.conf')",
     "runtime": "tfserving",
-    "time": 1666016018,
+    "time": 1666071920,
     "version": "2.9.2/v2.9.1-132-g18960c44ad3"
 }

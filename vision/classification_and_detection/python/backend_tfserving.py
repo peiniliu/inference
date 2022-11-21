@@ -102,6 +102,12 @@ class BackendTfserving(backend.Backend):
         if result != 286:
             raise ValueError("BackendTfserving backend error")
         log.info("PEINI: server is running")
+        
+        #warmup model
+        for _ in range (64):
+            response = requests.post(self.SERVER_URL, data=predict_request)
+            response.raise_for_status()
+        
         return self
 
     def predict(self, data):

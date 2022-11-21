@@ -21,8 +21,12 @@ REP=$7
 
 echo "parameter run_test: $1 $2 $3 $4 $5 $6 $7"
 
-#OUTPUT_DIR="output-exp24"
-OUTPUT_DIR="exp1"
+# OUTPUT_DIR="test-S"
+OUTPUT_DIR="exp3"
+# OUTPUT_DIR="exp2-baseline"
+# OUTPUT_DIR="output-O"
+# OUTPUT_DIR="output-MS"
+# OUTPUT_DIR="exp-baseline"
 
 for k in `seq $REP` 
 #for k in $REP 
@@ -36,8 +40,8 @@ do
          for c_batch in $LIST_CLIENT_BATCH
          do
               echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
-              /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 128 --qps 200 --max-batchsize $c_batch
-              sleep 30
+              /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 200 --max-batchsize $c_batch
+              sleep 60
               #mkdir $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k
               #for c in `seq 1`
               #do
@@ -57,7 +61,8 @@ do
          for c_batch in $LIST_CLIENT_BATCH
          do
             echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
-            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 200
+            #/gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 200 --max-latency 60
+            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario Server --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 700 --max-latency 60
             sleep 30
          done
          ;;
@@ -66,15 +71,16 @@ do
          do
             echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
             /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario SingleStream --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k
-            sleep 30
+            sleep 15
          done
          ;;
        "MS")
          for c_batch in $LIST_CLIENT_BATCH
          do
             echo "output: $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k"
-            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario MultiStream --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --threads 256 --qps 200 --max-latency 80
-            sleep 30
+            /gpfs/bsc_home/xpliu/inference/vision/classification_and_detection/main.sh --dataset imagenet_tfserving --dataset-path data_imagenet --scenario MultiStream --model-name resnet50 --server 172.30.0.50:31930 --backend tfserving --output $OUTPUT_DIR/$K8S_ENV-$bench-$num_container-$server_batch-$scen-$c_batch-$k --samples-per-query $c_batch
+            #--threads 256 --max-latency 50 --qps 200   --find-peak-performance
+            sleep 15
          done
          ;;
        esac

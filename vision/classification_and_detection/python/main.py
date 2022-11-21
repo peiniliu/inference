@@ -359,7 +359,7 @@ class RunnerBase:
                 #log.info(results)
                 #"predict list"
                 processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
-                log.info(processed_results)
+                #log.info(processed_results)
             elif self.model.name() == "tfserving_v2":
                 # log.info("Call tfserving predict v2")
                 results = self.model.predict(qitem.img)
