@@ -71,9 +71,9 @@ spec:
         image: 172.30.0.49:5000/resnet_serving:2.8.2
         #args: ["--rest_api_num_threads=32","--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_timeout_in_ms=200000","--rest_api_timeout_in_ms=100000"]
         #o
-        #args: ["--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_num_threads=$restapi"]
+        args: ["--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_num_threads=$restapi"]
         #args: ["--rest_api_timeout_in_ms=60000"]
-        args: ["--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_num_threads=$restapi","--rest_api_timeout_in_ms=60000"]
+        # args: ["--tensorflow_intra_op_parallelism=$intra","--tensorflow_inter_op_parallelism=$inter","--rest_api_num_threads=$restapi","--rest_api_timeout_in_ms=60000"]
         env:
         - name: MODEL_NAME
           value: "$1"

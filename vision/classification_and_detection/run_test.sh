@@ -22,7 +22,7 @@ REP=$7
 echo "parameter run_test: $1 $2 $3 $4 $5 $6 $7"
 
 # OUTPUT_DIR="test-S"
-OUTPUT_DIR="exp3"
+OUTPUT_DIR="test-1129"
 # OUTPUT_DIR="exp2-baseline"
 # OUTPUT_DIR="output-O"
 # OUTPUT_DIR="output-MS"
