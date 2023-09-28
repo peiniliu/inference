@@ -23,6 +23,7 @@ class Imagenet(dataset.Dataset):
     def __init__(self, data_path, image_list, name, use_cache=0, image_size=None,
             image_format="NHWC", pre_process=None, count=None, cache_dir=None, preprocessed_dir=None, threads=os.cpu_count()):
         super(Imagenet, self).__init__()
+        
         if image_size is None:
             self.image_size = [224, 224, 3]
         else:
@@ -36,13 +37,16 @@ class Imagenet(dataset.Dataset):
         self.pre_process = pre_process # if None we assume data_path is having preprocessed dataset
         self.use_cache = use_cache
 
+        
         if preprocessed_dir:
             self.cache_dir = preprocessed_dir
         elif pre_process:
             self.cache_dir = os.path.join(cache_dir, "preprocessed", name, image_format)
         else:
             self.cache_dir = cache_dir
-
+            
+            
+        
         # input images are in HWC
         self.need_transpose = True if image_format == "NCHW" else False
 
@@ -58,6 +62,7 @@ class Imagenet(dataset.Dataset):
             CNT = count
         else:
             CNT = count if count <= self.count else self.count
+            
 
         os.makedirs(self.cache_dir, exist_ok=True)
 
@@ -84,6 +89,7 @@ class Imagenet(dataset.Dataset):
                 lists.append([ next(f) for x in range(int(CNT%N)) ])
                 image_lists.append([])
                 label_lists.append([])
+                      
         executor = concurrent.futures.ThreadPoolExecutor(N)
         futures = [executor.submit(self.process, data_path, item, image_lists[lists.index(item)],
             label_lists[lists.index(item)]) for item in lists]
@@ -107,7 +113,11 @@ class Imagenet(dataset.Dataset):
             image_name, label = re.split(r"\s+", s.strip())
             src = os.path.join(data_path, image_name)
             if not self.pre_process:
-                if not os.path.exists(os.path.join(data_path, image_name) + ".npy"):
+                # if not os.path.exists(os.path.join(data_path, image_name) + ".npy"):
+                #     # if the image does not exists ignore it
+                #     self.not_found += 1
+                #     continue
+                if not os.path.exists(src):
                     # if the image does not exists ignore it
                     self.not_found += 1
                     continue
@@ -133,7 +143,8 @@ class Imagenet(dataset.Dataset):
     def get_item(self, nr):
         """Get image by number in the list."""
         dst = os.path.join(self.cache_dir, self.image_list[nr])
-        img = np.load(dst + ".npy")
+        # img = np.load(dst + ".npy")
+        img = dst
         return img, self.label_list[nr]
 
     def get_item_loc(self, nr):

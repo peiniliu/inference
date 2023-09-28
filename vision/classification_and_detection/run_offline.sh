@@ -1,0 +1,1 @@
+python python/main.py --mlperf_conf ../../mlperf.conf --dataset imagenet_img --dataset-path /home/pliu/opt/open-mmlab/data/imagenet --scenario Offline --model-name resnet50 --inputs 10.96.34.80:8080 --backend pytorch-server --threads 256 --qps 200 --model resnet50 

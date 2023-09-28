@@ -38,6 +38,9 @@ SUPPORTED_DATASETS = {
     "imagenet":
         (imagenet.Imagenet, dataset.pre_process_vgg, dataset.PostProcessCommon(offset=-1),
          {"image_size": [224, 224, 3]}),
+    "imagenet_img":
+        (imagenet.Imagenet, dataset.pre_process_no, dataset.PostProcessRestful(offset=-1),
+         {"image_size": [224, 224, 3]}),
     "imagenet_mobilenet":
         (imagenet.Imagenet, dataset.pre_process_mobilenet, dataset.PostProcessArgMax(offset=-1),
          {"image_size": [224, 224, 3]}),
@@ -106,6 +109,16 @@ SUPPORTED_PROFILES = {
         "dataset": "imagenet",
         "outputs": "ArgMax:0",
         "backend": "onnxruntime",
+        "model-name": "resnet50",
+    },
+    "resnet50-pytorchlocal": {
+        "dataset": "imagenet_img",
+        "backend": "pytorch-local",
+        "model-name": "resnet50",
+    },
+    "resnet50-pytorchserver": {
+        "dataset": "imagenet_img",
+        "backend": "pytorch-server",
         "model-name": "resnet50",
     },
 
@@ -294,6 +307,12 @@ def get_backend(backend):
     elif backend == "tflite":
         from backend_tflite import BackendTflite
         backend = BackendTflite()
+    elif backend == "pytorch-local":
+        from backend_torchlocal import BackendPytorchLocal
+        backend = BackendPytorchLocal()
+    elif backend == "pytorch-server":
+        from backend_torchserver import BackendPytorchServer
+        backend = BackendPytorchServer()
     else:
         raise ValueError("unknown backend: " + backend)
     return backend
@@ -334,8 +353,13 @@ class RunnerBase:
         # run the prediction
         processed_results = []
         try:
-            results = self.model.predict({self.model.inputs[0]: qitem.img})
-            processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+            if self.model.name() == "pytorch-local" or self.model.name() == "pytorch-server":
+                results = self.model.predict(qitem.img)
+                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
+                log.info(processed_results)
+            else:
+                results = self.model.predict({self.model.inputs[0]: qitem.img})
+                processed_results = self.post_process(results, qitem.content_id, qitem.label, self.result_dict)
             if self.take_accuracy:
                 self.post_process.add_results(processed_results)
             self.result_timing.append(time.time() - qitem.start)
@@ -490,6 +514,16 @@ def main():
                         preprocessed_dir=args.preprocessed_dir,
                         threads=args.threads,
                         **kwargs)
+    # log.error("PEINI: Load DATASET: datapath={} imagelist={}, name={}, imageformat={}, pre_process={}, use_cache={}, count={}".format(
+    #       args.dataset_path,
+    #       ds.image_list,
+    #       args.dataset,
+    #       image_format,
+    #       pre_proc,
+    #       args.cache,
+    #       ds.get_item_count)
+    # )
+    
     # load model to backend
     model = backend.load(args.model, inputs=args.inputs, outputs=args.outputs)
     final_results = {
@@ -523,11 +557,11 @@ def main():
     count = ds.get_item_count()
 
     # warmup
-    ds.load_query_samples([0])
-    for _ in range(5):
-        img, _ = ds.get_samples([0])
-        _ = backend.predict({backend.inputs[0]: img})
-    ds.unload_query_samples(None)
+    # ds.load_query_samples([0])
+    # for _ in range(5):
+    #     img, _ = ds.get_samples([0])
+    #     _ = backend.predict({backend.inputs[0]: img})
+    # ds.unload_query_samples(None)
 
     scenario = SCENARIO_MAP[args.scenario]
     runner_map = {

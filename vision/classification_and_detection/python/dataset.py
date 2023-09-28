@@ -106,6 +106,35 @@ class PostProcessCommon:
         results["good"] = self.good
         results["total"] = self.total
 
+        
+class PostProcessRestful:
+    def __init__(self, offset=0):
+        self.offset = offset
+        self.good = 0
+        self.total = 0
+
+    def __call__(self, results, ids, expected=None, result_dict=None):
+        processed_results = []
+        n = len(results)
+        for idx in range(0, n):
+            result = results[idx]['pred_label']
+            processed_results.append([result])
+            if result == expected[idx]:
+                self.good += 1
+            # log.error("result {}, expect {}".format(result, expected[idx]))
+        self.total += n
+        return processed_results
+
+    def add_results(self, results):
+        pass
+
+    def start(self):
+        self.good = 0
+        self.total = 0
+
+    def finalize(self, results, ds=False,  output_dir=None):
+        results["good"] = self.good
+        results["total"] = self.total
 
 class PostProcessArgMax:
     def __init__(self, offset=0):
@@ -164,6 +193,8 @@ def resize_with_aspectratio(img, out_height, out_width, scale=87.5, inter_pol=cv
     img = cv2.resize(img, (w, h), interpolation=inter_pol)
     return img
 
+def pre_process_no(img, dims=None, need_transpose=False):
+    return img
 
 def pre_process_vgg(img, dims=None, need_transpose=False):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

@@ -1,0 +1,1 @@
+/home/pliu/opt/inference/vision/classification_and_detection/main.sh --dataset imagenet_img --dataset-path data_imagenet --scenario Offline --model-name resnet50 --server 10.96.34.80:8080 --backend pytorchserver --threads 256 --qps 200 
